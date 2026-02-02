@@ -2,6 +2,7 @@ package com.example.plugin_common.plugin.info
 
 import android.content.res.Resources
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
@@ -21,8 +22,8 @@ data class PluginInfo(
     private lateinit var dataDir: File
 
     @get:Composable
-    val icon: Painter get() {
-        return createPainter(iconResId)
+    val icon: Painter get() = remember(this) {
+        createPainter(iconResId)
     }
 
     private fun createPainter(resId: Int): Painter {
