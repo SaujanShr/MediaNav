@@ -29,4 +29,9 @@ object ApiConstants {
             Header.USER_AGENT to "Medianav/1.0 (Android)"
         )
     }
+
+    object Retry {
+        const val MAX_ATTEMPTS = 3
+        const val INITIAL_BACKOFF_MS = 1000L
+    }
 }

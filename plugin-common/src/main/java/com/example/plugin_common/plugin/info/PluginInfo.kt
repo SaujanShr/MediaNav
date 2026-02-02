@@ -22,7 +22,7 @@ data class PluginInfo(
     private lateinit var dataDir: File
 
     @get:Composable
-    val icon: Painter get() = remember(this) {
+    val icon: Painter get() = remember(iconResId) {
         createPainter(iconResId)
     }
 
