@@ -42,7 +42,7 @@ data class PluginInfo(
         return BitmapPainter(bitmap.asImageBitmap())
     }
 
-    fun onAttach(dataDir: File, resources: Resources) {
+    fun attach(dataDir: File, resources: Resources) {
         this.dataDir = dataDir
         this.resources = resources
     }
