@@ -22,6 +22,7 @@ gson = "2.13.2"
 datastore = "1.2.0"
 iconsExtended = "1.7.8"
 navigationCompose = "2.9.7"
+foundationLayout = "1.10.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +56,8 @@ androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplaye
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

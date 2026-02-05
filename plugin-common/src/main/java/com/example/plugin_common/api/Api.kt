@@ -8,27 +8,25 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
-object Api {
+class Api(val requestsPerMinute: Int? = null) {
     private val lock = Mutex()
     private var lastRequestTime = 0L
 
-    suspend fun get(
-        url: String,
-        headers: Map<String, String> = emptyMap(),
-        requestsPerMinute: Int? = null
-    ): Result<String> = withContext(Dispatchers.IO) {
-        executeWithRetry(requestsPerMinute) {
-            val conn = buildConnection(url, headers)
-            try {
-                conn.connect()
-                readResponse(conn)
-            } finally {
-                conn.disconnect()
+    suspend fun get(url: String, headers: Map<String, String> = emptyMap()) =
+        withContext(Dispatchers.IO) {
+            executeWithRetry(requestsPerMinute) {
+                val conn = buildConnection(url, headers)
+                try {
+                    conn.connect()
+                    readResponse(conn)
+                } finally {
+                    conn.disconnect()
+                }
             }
         }
-    }
 
     private suspend fun <T> executeWithRetry(
         requestsPerMinute: Int?,
@@ -77,17 +75,31 @@ object Api {
 
     private fun readResponse(conn: HttpURLConnection): String {
         val code = conn.responseCode
-        val stream = if (code in 200..299) {
-            conn.inputStream
-        } else {
-            val error = conn.errorStream
-                ?.bufferedReader()
-                ?.use { it.readText() }
+        val responseStream = if (code in 200..299) conn.inputStream else conn.errorStream
 
-            throw ApiException(code, "HTTP $code ${error ?: ""}".trim())
+        if (responseStream == null) {
+            if (code !in 200..299) {
+                throw ApiException(code, "HTTP $code")
+            }
+            return ""
         }
 
-        return stream.bufferedReader().use { it.readText() }
+        val stream = if (
+            ApiConstants.Response.GZIP
+                .equals(conn.contentEncoding, ignoreCase = true)
+            ) {
+            GZIPInputStream(responseStream)
+        } else {
+            responseStream
+        }
+
+        val responseText = stream.bufferedReader().use { it.readText() }
+
+        if (code !in 200..299) {
+            throw ApiException(code, "HTTP $code $responseText".trim())
+        }
+
+        return responseText
     }
 
     private fun buildConnection(

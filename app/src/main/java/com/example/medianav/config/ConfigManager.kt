@@ -1,8 +1,6 @@
 package com.example.medianav.config
 
 import android.content.Context
-import com.example.plugin_common.type.PluginId
-import com.example.plugin_common.type.Secrets
 import com.example.medianav.ui.theme.Theme
 import com.example.medianav.util.firstResult
 import com.example.plugin_common.plugin.SecretPlugin
@@ -51,7 +49,11 @@ object ConfigManager {
         return secrets ?: emptyMap()
     }
 
-    suspend fun setSecretsForPlugin(context: Context, plugin: SecretPlugin, secrets: Secrets) {
+    suspend fun setSecretsForPlugin(
+        context: Context,
+        plugin: SecretPlugin,
+        secrets: Map<String, String>
+    ) {
         ConfigStorage.setSecretsForPlugin(context, plugin.info.id, secrets)
         _secrets.update { current -> current + (plugin.info.id to secrets) }
     }

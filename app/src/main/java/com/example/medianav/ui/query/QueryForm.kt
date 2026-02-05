@@ -23,6 +23,7 @@ import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.expression.FilterExpression
 import com.example.plugin_common.library.expression.SortExpression
 import com.example.plugin_common.library.schema.QuerySchema
+import com.example.plugin_common.library.schema.field.BooleanFieldSchema
 import com.example.plugin_common.library.schema.field.DateFieldSchema
 import com.example.plugin_common.library.schema.field.FilterFieldSchema
 import com.example.plugin_common.library.schema.field.NumberFieldSchema
@@ -53,7 +54,7 @@ fun QueryForm(
                 expandedField = if (expandedField == field) null else field
             },
             onValueChange = { field, value ->
-                queryState = queryState.copyWith(field, value)
+                queryState = queryState.copyWith(field, value, schema)
                 onQueryChange(queryState)
             }
         )
@@ -87,6 +88,17 @@ fun QueryFields(
             val isExpanded = expandedField == fieldName
 
             when (fieldSchema) {
+                is BooleanFieldSchema -> {
+                    val currentValue = queryState.booleanFields[fieldName] ?: false
+                    BooleanField(
+                        fieldName = fieldName,
+                        expanded = isExpanded,
+                        value = currentValue,
+                        onToggle = { onFieldToggle(fieldName) },
+                        onValueChange = { newValue -> onValueChange(fieldName, newValue) }
+                    )
+                }
+
                 is SearchFieldSchema -> {
                     val currentValue = queryState.searchFields[fieldName] ?: ""
                     val validation = fieldSchema.validate(currentValue)
@@ -162,27 +174,31 @@ fun QueryFields(
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun LibraryQuery.copyWith(fieldName: String, value: Any?): LibraryQuery {
-    return when (fieldName) {
-        in searchFields -> copy(
+private fun LibraryQuery.copyWith(
+    fieldName: String,
+    value: Any?,
+    schema: QuerySchema
+): LibraryQuery {
+    val fieldSchema = schema.fields[fieldName] ?: return this
+
+    return when (fieldSchema) {
+        is SearchFieldSchema -> copy(
             searchFields = searchFields + (fieldName to value as String)
         )
-        in numberFields -> copy(
+        is BooleanFieldSchema -> copy(
+            booleanFields = booleanFields + (fieldName to value as Boolean)
+        )
+        is NumberFieldSchema -> copy(
             numberFields = numberFields + (fieldName to value as Pair<Float?, Float?>)
         )
-        in dateFields -> copy(
+        is DateFieldSchema -> copy(
             dateFields = dateFields + (fieldName to value as Pair<LocalDate?, LocalDate?>)
         )
-        in filterFields -> copy(
+        is FilterFieldSchema -> copy(
             filterFields = filterFields + (fieldName to value as FilterExpression)
         )
-        in sortFields -> copy(
+        is SortFieldSchema -> copy(
             sortFields = sortFields + (fieldName to value as SortExpression)
         )
-        else -> when (value) {
-            is FilterExpression -> copy(filterFields = filterFields + (fieldName to value))
-            is SortExpression -> copy(sortFields = sortFields + (fieldName to value))
-            else -> this
-        }
     }
 }

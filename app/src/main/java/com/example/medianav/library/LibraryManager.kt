@@ -1,8 +1,6 @@
 package com.example.medianav.library
 
 import android.content.Context
-import com.example.plugin_common.type.LibraryId
-import com.example.plugin_common.type.PluginId
 import com.example.medianav.util.firstResult
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus

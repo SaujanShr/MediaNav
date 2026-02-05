@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -35,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
+import com.example.plugin_common.media.GalleryPlayer
 import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
@@ -99,21 +101,13 @@ private fun ItemTitle(
             style = MaterialTheme.typography.titleMedium,
             color = contentColor
         )
-        item.subtitle?.let { subtitle ->
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor.copy(alpha = 0.8f)
-            )
-        }
     }
 }
 
 @Composable
 private fun ItemContent(plugin: MediaPlugin, item: LibraryItem) {
     Row(verticalAlignment = Alignment.Top) {
-        Thumbnail(item)
+        plugin.Thumbnail(item)
 
         Spacer(modifier = Modifier.width(12.dp))
 

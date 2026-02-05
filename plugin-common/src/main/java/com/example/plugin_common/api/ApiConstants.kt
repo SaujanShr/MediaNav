@@ -1,6 +1,6 @@
 package com.example.plugin_common.api
 
-object ApiConstants {
+internal object ApiConstants {
     object Method {
         const val GET = "GET"
     }
@@ -30,8 +30,12 @@ object ApiConstants {
         )
     }
 
+    object Response {
+        val GZIP = "gzip"
+    }
+
     object Retry {
-        const val MAX_ATTEMPTS = 3
+        const val MAX_ATTEMPTS = 5
         const val INITIAL_BACKOFF_MS = 1000L
     }
 }

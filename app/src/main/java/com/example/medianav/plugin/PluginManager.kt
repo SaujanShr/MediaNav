@@ -1,6 +1,7 @@
 package com.example.medianav.plugin
 
 import android.content.Context
+import com.example.plugin_anime.AnimePlugin
 import com.example.plugin_common.plugin.MediaPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,10 @@ object PluginManager {
             initialized = true
             restorePlugins(context)
             restoreEnabledPluginIds(context)
+
+            val plugin = AnimePlugin()
+            setPluginInCache(plugin)
+            setEnabled(context, plugin, true)
         }
     }
 

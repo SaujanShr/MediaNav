@@ -19,6 +19,9 @@ interface MediaPlugin {
     suspend fun getLibraryItemCount(query: LibraryQuery): Int
 
     @Composable
+    fun Thumbnail(item: LibraryItem)
+
+    @Composable
     fun DetailsContent(item: LibraryItem)
 
     @Composable

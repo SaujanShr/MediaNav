@@ -1,11 +1,11 @@
 package com.example.plugin_common.plugin.info
 
 enum class PluginCategory(val value: String) {
-    ART("art"),
-    GAME("game"),
-    LEAK("leak"),
-    VIDEO("video"),
-    UNKNOWN("unknown");
+    ART("Art"),
+    GAME("Game"),
+    LEAK("Leak"),
+    VIDEO("Video"),
+    UNKNOWN("Unknown");
 
     companion object {
         private val map = entries.associateBy(PluginCategory::value)

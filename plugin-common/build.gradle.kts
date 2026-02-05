@@ -45,11 +45,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.material3)
     implementation(libs.coil.compose)
+    implementation(libs.gson)
+    implementation(libs.kotlin.reflect)
     implementation(libs.zoomable.image.coil)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.exoplayer)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

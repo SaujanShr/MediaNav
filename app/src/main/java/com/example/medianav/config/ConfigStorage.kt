@@ -6,8 +6,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.plugin_common.type.PluginId
-import com.example.plugin_common.type.Secrets
 import com.example.medianav.ui.theme.Theme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
