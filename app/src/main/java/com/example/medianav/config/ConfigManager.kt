@@ -14,7 +14,7 @@ object ConfigManager {
     private val _theme = MutableStateFlow(Theme.DEFAULT)
     val theme = _theme.asStateFlow()
 
-    private val _secrets = MutableStateFlow<Map<PluginId, Secrets>>(emptyMap())
+    private val _secrets = MutableStateFlow<Map<String, Map<String, String>>>(emptyMap())
 
     private val initMutex = Mutex()
     private var initialized = false
@@ -44,7 +44,7 @@ object ConfigManager {
             .getOrElse { emptyMap() }
     }
 
-    fun secretsForPlugin(plugin: SecretPlugin): Secrets {
+    fun secretsForPlugin(plugin: SecretPlugin): Map<String, String> {
         val secrets = _secrets.value[plugin.info.id]
         return secrets ?: emptyMap()
     }

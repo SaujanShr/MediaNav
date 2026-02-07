@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.withLock
 
 object LibraryManager {
     private val _libraryItems =
-        MutableStateFlow<Map<PluginId, Map<LibraryId, LibraryItem>>>(emptyMap())
+        MutableStateFlow<Map<String, Map<String, LibraryItem>>>(emptyMap())
 
     private val initMutex = Mutex()
     private var initialized = false

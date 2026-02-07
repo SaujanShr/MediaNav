@@ -13,7 +13,7 @@ import kotlin.math.pow
 
 class Api(val requestsPerMinute: Int? = null) {
     private val lock = Mutex()
-    private var lastRequestTime = 0L
+    private var nextRequestTime = 0L
 
     suspend fun get(url: String, headers: Map<String, String> = emptyMap()) =
         withContext(Dispatchers.IO) {
@@ -41,8 +41,9 @@ class Api(val requestsPerMinute: Int? = null) {
             } catch (e: Exception) {
                 lastThrowable = e
                 if (!shouldRetry(e, attempt)) break
-                
-                val backoff = ApiConstants.Retry.INITIAL_BACKOFF_MS * 2.0.pow(attempt).toLong()
+
+                val backoff = ApiConstants.Retry.INITIAL_BACKOFF_MS *
+                        2.0.pow(attempt.toDouble()).toLong()
                 delay(backoff)
             }
         }
@@ -54,49 +55,46 @@ class Api(val requestsPerMinute: Int? = null) {
 
         return when (e) {
             is IOException -> true
-            is ApiException -> e.code in listOf(500, 502, 503, 504)
+            is ApiException -> e.code in listOf(429, 500, 502, 503, 504)
             else -> false
         }
     }
 
-    private suspend fun applyRateLimit(requestsPerMinute: Int?) = lock.withLock {
-        if (requestsPerMinute == null || requestsPerMinute <= 0) return@withLock
+    private suspend fun applyRateLimit(requestsPerMinute: Int?) {
+        if (requestsPerMinute == null || requestsPerMinute <= 0) return
 
         val windowMs = 60_000L / requestsPerMinute
-        val now = System.currentTimeMillis()
-        val elapsed = now - lastRequestTime
-        val waitTime = windowMs - elapsed
+        val waitTime = lock.withLock {
+            val now = System.currentTimeMillis()
+            val scheduledTime = maxOf(nextRequestTime, now)
+            nextRequestTime = scheduledTime + windowMs
+            scheduledTime - now
+        }
 
         if (waitTime > 0) {
             delay(waitTime)
         }
-        lastRequestTime = System.currentTimeMillis()
     }
 
     private fun readResponse(conn: HttpURLConnection): String {
         val code = conn.responseCode
-        val responseStream = if (code in 200..299) conn.inputStream else conn.errorStream
+        val isSuccess = code in 200..299
+        val responseStream = if (isSuccess) conn.inputStream else conn.errorStream
 
-        if (responseStream == null) {
-            if (code !in 200..299) {
-                throw ApiException(code, "HTTP $code")
-            }
-            return ""
-        }
+        val responseText = responseStream?.let { stream ->
+            val wrappedStream =
+                if (ApiConstants.Response.GZIP.equals(
+                        conn.contentEncoding, ignoreCase = true
+                )) {
+                    GZIPInputStream(stream)
+                } else {
+                    stream
+                }
+            wrappedStream.bufferedReader().use { it.readText() }
+        } ?: ""
 
-        val stream = if (
-            ApiConstants.Response.GZIP
-                .equals(conn.contentEncoding, ignoreCase = true)
-            ) {
-            GZIPInputStream(responseStream)
-        } else {
-            responseStream
-        }
-
-        val responseText = stream.bufferedReader().use { it.readText() }
-
-        if (code !in 200..299) {
-            throw ApiException(code, "HTTP $code $responseText".trim())
+        if (!isSuccess) {
+            throw ApiException(code, "HTTP $code: $responseText".trim())
         }
 
         return responseText
@@ -111,6 +109,7 @@ class Api(val requestsPerMinute: Int? = null) {
         connection.requestMethod = ApiConstants.Method.GET
         connection.connectTimeout = ApiConstants.Timeout.CONNECT_TIMEOUT_MS
         connection.readTimeout = ApiConstants.Timeout.READ_TIMEOUT_MS
+        connection.instanceFollowRedirects = true
 
         val allHeaders = ApiConstants.Request.DEFAULT_HEADERS + headers
         allHeaders.forEach { (key, value) ->

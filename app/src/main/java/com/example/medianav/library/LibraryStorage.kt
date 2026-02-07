@@ -19,7 +19,7 @@ internal object LibraryStorage {
 
     private val gson = Gson()
     private val nestedMapType =
-        object : TypeToken<MutableMap<PluginId, MutableMap<LibraryId, LibraryItem>>>() {}.type
+        object : TypeToken<MutableMap<String, MutableMap<String, LibraryItem>>>() {}.type
 
     fun libraryItemsMap(context: Context) =
         context.libraryDataStore.data
@@ -29,7 +29,7 @@ internal object LibraryStorage {
             }
             .map { prefs -> getLibraryItemsMap(prefs) }
 
-    suspend fun saveItem(context: Context, pluginId: PluginId, item: LibraryItem) =
+    suspend fun saveItem(context: Context, pluginId: String, item: LibraryItem) =
         context.libraryDataStore.edit { prefs ->
             val map = getLibraryItemsMap(prefs)
             val pluginMap = map.getOrPut(pluginId) { mutableMapOf() }
@@ -37,7 +37,7 @@ internal object LibraryStorage {
             prefs[itemsKey] = gson.toJson(map)
         }
 
-    suspend fun removeItemsForPlugin(context: Context, pluginId: PluginId) =
+    suspend fun removeItemsForPlugin(context: Context, pluginId: String) =
         context.libraryDataStore.edit { prefs ->
             val map = getLibraryItemsMap(prefs)
             val removed = map.remove(pluginId) != null
@@ -45,7 +45,7 @@ internal object LibraryStorage {
         }
 
     private fun getLibraryItemsMap(prefs: Preferences):
-            MutableMap<PluginId, MutableMap<LibraryId, LibraryItem>> {
+            MutableMap<String, MutableMap<String, LibraryItem>> {
         val json = prefs[itemsKey] ?: "{}"
         return gson.fromJson(json, nestedMapType)
     }

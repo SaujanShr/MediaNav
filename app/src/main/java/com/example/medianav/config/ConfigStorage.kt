@@ -20,7 +20,7 @@ internal object ConfigStorage {
     private val secretsKey = stringPreferencesKey(ConfigConstants.Keys.SECRETS)
 
     private val gson = Gson()
-    private val nestedMapType = object : TypeToken<MutableMap<PluginId, Secrets>>() {}.type
+    private val nestedMapType = object : TypeToken<MutableMap<String, Map<String, String>>>() {}.type
 
 
     fun theme(context: Context): Flow<Theme> =
@@ -36,7 +36,7 @@ internal object ConfigStorage {
             prefs[themeKey] = theme.value
         }
 
-    fun secretsMap(context: Context): Flow<Map<PluginId, Secrets>> =
+    fun secretsMap(context: Context): Flow<Map<String, Map<String, String>>> =
         context.configDataStore.data
             .catch { e ->
                 if (e is IOException) emit(emptyPreferences())
@@ -44,21 +44,21 @@ internal object ConfigStorage {
             }
             .map { prefs -> getSecretsMap(prefs) }
 
-    suspend fun setSecretsForPlugin(context: Context, pluginId: PluginId, secrets: Secrets) =
+    suspend fun setSecretsForPlugin(context: Context, pluginId: String, secrets: Map<String, String>) =
         context.configDataStore.edit { prefs ->
             val map = getSecretsMap(prefs)
             map[pluginId] = secrets.toMutableMap()
             prefs[secretsKey] = gson.toJson(map)
         }
 
-    suspend fun removeSecretsForPlugin(context: Context, pluginId: PluginId) =
+    suspend fun removeSecretsForPlugin(context: Context, pluginId: String) =
         context.configDataStore.edit { prefs ->
             val map = getSecretsMap(prefs)
             val removed = map.remove(pluginId) != null
             if (removed) prefs[secretsKey] = gson.toJson(map)
         }
 
-    private fun getSecretsMap(prefs: Preferences): MutableMap<PluginId, Secrets> {
+    private fun getSecretsMap(prefs: Preferences): MutableMap<String, Map<String, String>> {
         val json = prefs[secretsKey] ?: "{}"
         return gson.fromJson(json, nestedMapType)
     }

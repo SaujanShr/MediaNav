@@ -32,13 +32,13 @@ internal object PluginStorage {
         return this
     }
 
-    private fun pluginApkFile(context: Context, pluginId: PluginId) =
+    private fun pluginApkFile(context: Context, pluginId: String) =
         File(pluginsApkDir(context), "$pluginId.apk")
 
-    fun pluginDataDir(context: Context, pluginId: PluginId): File =
+    fun pluginDataDir(context: Context, pluginId: String): File =
         File(pluginsDataDir(context), pluginId).ensureExists()
 
-    fun deletePluginDataDir(context: Context, pluginId: PluginId) {
+    fun deletePluginDataDir(context: Context, pluginId: String) {
         val dir = pluginDataDir(context, pluginId)
         if (dir.exists() && !dir.deleteRecursively()) {
             throw IOException(
@@ -47,7 +47,7 @@ internal object PluginStorage {
         }
     }
 
-    private fun installedPluginIds(context: Context): Flow<Set<PluginId>> =
+    private fun installedPluginIds(context: Context): Flow<Set<String>> =
         context.pluginsDataStore.data
             .catch { e ->
                 if (e is IOException) emit(emptyPreferences())
@@ -55,7 +55,7 @@ internal object PluginStorage {
             }
             .map { prefs -> prefs[installedKey] ?: emptySet() }
 
-    fun enabledPluginIds(context: Context): Flow<Set<PluginId>> =
+    fun enabledPluginIds(context: Context): Flow<Set<String>> =
         context.pluginsDataStore.data
             .catch { e ->
                 if (e is IOException) emit(emptyPreferences())
@@ -70,7 +70,7 @@ internal object PluginStorage {
         file
     }
 
-    suspend fun savePluginFile(context: Context, pluginId: PluginId, sourceApk: File) {
+    suspend fun savePluginFile(context: Context, pluginId: String, sourceApk: File) {
         val file = pluginApkFile(context, pluginId)
         sourceApk.copyTo(file, overwrite = true)
 
@@ -78,7 +78,7 @@ internal object PluginStorage {
         setEnabledPluginId(context, pluginId, true)
     }
 
-    suspend fun deletePluginFile(context: Context, pluginId: PluginId) {
+    suspend fun deletePluginFile(context: Context, pluginId: String) {
         pluginApkFile(context, pluginId).delete()
         removeInstalledPluginId(context, pluginId)
         setEnabledPluginId(context, pluginId, false)
@@ -98,24 +98,24 @@ internal object PluginStorage {
         }
     }
 
-    private suspend fun addInstalledPluginId(context: Context, pluginId: PluginId) =
+    private suspend fun addInstalledPluginId(context: Context, pluginId: String) =
         context.pluginsDataStore.edit { it.addToSet(installedKey, pluginId) }
 
-    private suspend fun removeInstalledPluginId(context: Context, pluginId: PluginId) =
+    private suspend fun removeInstalledPluginId(context: Context, pluginId: String) =
         context.pluginsDataStore.edit { it.removeFromSet(installedKey, pluginId) }
 
-    suspend fun setEnabledPluginId(context: Context, pluginId: PluginId, enabled: Boolean) =
+    suspend fun setEnabledPluginId(context: Context, pluginId: String, enabled: Boolean) =
         context.pluginsDataStore.edit {
             if (enabled) it.addToSet(enabledKey, pluginId)
             else it.removeFromSet(enabledKey, pluginId)
         }
 
-    private fun MutablePreferences.addToSet(key: Key<Set<PluginId>>, value: PluginId) {
+    private fun MutablePreferences.addToSet(key: Key<Set<String>>, value: String) {
         val existing = this[key] ?: emptySet()
         this[key] = existing + value
     }
 
-    private fun MutablePreferences.removeFromSet(key: Key<Set<PluginId>>, value: PluginId) {
+    private fun MutablePreferences.removeFromSet(key: Key<Set<String>>, value: String) {
         val existing = this[key] ?: emptySet()
         this[key] = existing - value
     }

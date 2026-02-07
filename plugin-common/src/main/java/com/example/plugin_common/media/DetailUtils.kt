@@ -1,4 +1,4 @@
-package com.example.plugin_common.library
+package com.example.plugin_common.media
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

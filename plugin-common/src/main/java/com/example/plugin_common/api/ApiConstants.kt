@@ -31,7 +31,7 @@ internal object ApiConstants {
     }
 
     object Response {
-        val GZIP = "gzip"
+        const val GZIP = "gzip"
     }
 
     object Retry {
