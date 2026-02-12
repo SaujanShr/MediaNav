@@ -27,7 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.medianav.util.toTitleCase
+import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
@@ -62,7 +62,7 @@ private fun PluginSelectedContent(plugin: MediaPlugin) {
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = plugin.info.name,
+                text = plugin.metadata.name,
                 style = MaterialTheme.typography.titleMedium
             )
             Row(
@@ -70,14 +70,9 @@ private fun PluginSelectedContent(plugin: MediaPlugin) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = plugin.info.category.name.toTitleCase(),
+                    text = plugin.metadata.category.name.toTitleCase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = plugin.info.version,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -117,7 +112,7 @@ private fun PluginIcon(plugin: MediaPlugin) {
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
     ) {
         Image(
-            painter = plugin.info.icon,
+            painter = plugin.resources.icon,
             contentDescription = null,
             modifier = Modifier.size(32.dp),
             contentScale = ContentScale.Fit

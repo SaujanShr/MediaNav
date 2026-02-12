@@ -17,11 +17,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.medianav.config.ConfigManager
 import com.example.medianav.ui.theme.Theme
-import com.example.medianav.util.toTitleCase
+import com.example.plugin_common.util.toTitleCase
 
 @Composable
 internal fun ThemeSetting(viewModel: SettingsViewModel) {
@@ -69,13 +68,11 @@ private fun ThemeItem(
     currentTheme: Theme,
     theme: Theme
 ) {
-    val context = LocalContext.current
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                viewModel.setTheme(context, theme)
+                viewModel.setTheme(theme)
             }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

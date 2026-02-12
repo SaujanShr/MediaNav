@@ -2,37 +2,9 @@ package com.example.plugin_common.util
 
 import com.google.gson.annotations.SerializedName
 import java.net.URLEncoder
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlin.reflect.KProperty1
-
-suspend fun <A, B> Iterable<A>.mapAsync(
-    transform: suspend (A) -> B
-): List<B> = coroutineScope {
-    map { async { transform(it) } }.awaitAll()
-}
-
-suspend fun <A, B : Any> Iterable<A>.mapAsyncNotNull(
-    transform: suspend (A) -> B?
-): List<B> = coroutineScope {
-    map { async { transform(it) } }
-        .awaitAll()
-        .filterNotNull()
-}
-
-inline fun <T, R> Iterable<T>.firstOrDefault(
-    default: R,
-    transform: (T) -> R?
-): R {
-    for (element in this) {
-        val value = transform(element)
-        if (value != null) return value
-    }
-    return default
-}
 
 fun buildApiUrl(
     baseUrl: String,

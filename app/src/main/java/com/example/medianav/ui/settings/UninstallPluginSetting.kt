@@ -83,10 +83,10 @@ private fun UninstallPluginDropdown(
     pluginToConfirm?.let { plugin ->
         ConfirmDialog(
             title = "Uninstall Plugin",
-            text = "Are you sure you want to uninstall \"${plugin.info.name}\"?",
+            text = "Are you sure you want to uninstall \"${plugin.metadata.name}\"?",
             onConfirm = {
-                settingsViewModel.uninstallPlugin(context, plugin)
-                if (plugin.info.id == pluginViewModel.currentPlugin.value?.info?.id) {
+                settingsViewModel.uninstallPlugin(plugin)
+                if (plugin.metadata.id == pluginViewModel.currentPlugin.value?.metadata?.id) {
                     pluginViewModel.clearPlugin()
                 }
                 pluginToConfirm = null

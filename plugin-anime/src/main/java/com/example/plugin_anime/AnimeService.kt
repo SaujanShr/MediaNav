@@ -13,19 +13,9 @@ internal class AnimeService {
         page: Int,
         limit: Int,
         genreCache: Map<GenreQueryFilter, List<Genre>>
-    ): Result<List<Anime>> {
+    ): Result<AnimeSearchResponse> {
         val query = query.toSearchQuery(page, limit, genreCache)
-        val response = api.getAnimeSearch(query)
-        return response.map { res -> res.data }
-    }
-
-    suspend fun animeCount(
-        query: LibraryQuery,
-        genreCache: Map<GenreQueryFilter, List<Genre>>
-    ): Result<Int> {
-        val query = query.toSearchQuery(1, 1, genreCache)
-        val response = api.getAnimeSearch(query)
-        return response.map { it.pagination.items.total }
+        return api.getAnimeSearch(query)
     }
 
     suspend fun genreCache(): Map<GenreQueryFilter, List<Genre>> = runCatching {

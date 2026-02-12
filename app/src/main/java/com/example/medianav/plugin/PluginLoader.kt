@@ -1,7 +1,6 @@
 package com.example.medianav.plugin
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.content.res.Resources
 import android.content.res.loader.ResourcesLoader
 import android.content.res.loader.ResourcesProvider
@@ -43,6 +42,7 @@ internal object PluginLoader {
             context.codeCacheDir,
             PluginConstants.Paths.ODEX_DIR
         ).apply { mkdirs() }
+
         return DexClassLoader(
             apkFile.absolutePath,
             optimizedDir.absolutePath,
@@ -77,8 +77,8 @@ internal object PluginLoader {
         }
 
         val plugin = pluginClass.getDeclaredConstructor().newInstance() as MediaPlugin
-        val dataDir = PluginStorage.pluginDataDir(context, plugin.info.id)
-        plugin.info.attach(dataDir, pluginResources)
+        val dataDir = PluginStorage.pluginDataDir(context, plugin.metadata.id)
+        plugin.resources.attach(dataDir, pluginResources)
         return plugin
     }
 

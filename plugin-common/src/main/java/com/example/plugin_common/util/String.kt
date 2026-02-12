@@ -1,4 +1,4 @@
-package com.example.medianav.util
+package com.example.plugin_common.util
 
 fun String.toTitleCase(): String =
     split('_').joinToString(" ") {

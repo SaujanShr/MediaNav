@@ -1,19 +1,21 @@
 package com.example.medianav.ui.library
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medianav.library.LibraryConstants
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.filter
+import androidx.paging.map
 import com.example.medianav.library.LibraryManager
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.plugin.MediaPlugin
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -21,27 +23,37 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
+enum class LibraryMode {
+    QUERY, LIST
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModel : ViewModel() {
     private val _errors = MutableSharedFlow<String>()
     val errors = _errors.asSharedFlow()
 
     private val _currentPlugin = MutableStateFlow<MediaPlugin?>(null)
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _expandedItemId = MutableStateFlow<String?>(null)
-    val expandedItemId: StateFlow<String?> = _expandedItemId.asStateFlow()
+    val currentPlugin = _currentPlugin.asStateFlow()
 
     private val _selectedStatus = MutableStateFlow(LibraryItemStatus.NONE)
-    val selectedStatus: StateFlow<LibraryItemStatus> = _selectedStatus.asStateFlow()
+    val selectedStatus = _selectedStatus.asStateFlow()
+
+    private val _isQueryFiltered = MutableStateFlow(false)
+    val isQueryFiltered = _isQueryFiltered.asStateFlow()
 
     private val _currentPage = MutableStateFlow(0)
-    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+    val currentPage = _currentPage.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _totalPages = MutableStateFlow(1)
+    val totalPages = _totalPages.asStateFlow()
+
+    private val pageSize = 9
+
+    val mode: Flow<LibraryMode> = _selectedStatus.map {
+        if (it == LibraryItemStatus.NONE) LibraryMode.QUERY else LibraryMode.LIST
+    }
+
     private val itemMap = _currentPlugin.flatMapLatest { plugin ->
         if (plugin == null) flowOf(emptyMap())
         else LibraryManager.itemsForPlugin(plugin)
@@ -51,164 +63,57 @@ class LibraryViewModel : ViewModel() {
         initialValue = emptyMap()
     )
 
-    private val remotePageItems = MutableStateFlow<List<LibraryItem>>(emptyList())
-    private val remoteTotalCount = MutableStateFlow(0)
+    private val _baseQueryItems = _currentPlugin.flatMapLatest { plugin ->
+        plugin?.getLibraryItems(LibraryQuery()) ?: flowOf(PagingData.empty())
+    }.cachedIn(viewModelScope)
 
-    private val likedItems: StateFlow<List<LibraryItem>> =
-        itemMap.map { map ->
-            map.values.filter {
-                it.status == LibraryItemStatus.LIKED
-            }.sortedBy { it.id }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    private val _filteredQueryItems = combine(_baseQueryItems, itemMap) { pagingData, items ->
+        pagingData
+            .map { remoteItem -> items[remoteItem.id] ?: remoteItem }
+            .filter { it.status == LibraryItemStatus.NONE }
+    }.cachedIn(viewModelScope)
 
-    private val viewedItems: StateFlow<List<LibraryItem>> =
-        itemMap.map { map ->
-            map.values.filter {
-                it.status == LibraryItemStatus.VIEWED
-            }.sortedBy { it.id }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    val queryItems: Flow<PagingData<LibraryItem>> = _isQueryFiltered.flatMapLatest { filtered ->
+        if (filtered) _filteredQueryItems else _baseQueryItems
+    }
 
-    val totalPages: StateFlow<Int> = combine(
-        _selectedStatus,
-        remoteTotalCount,
-        likedItems,
-        viewedItems
-    ) { status, remoteCount, liked, viewed ->
-        val totalItems = when (status) {
-            LibraryItemStatus.NONE -> remoteCount
-            LibraryItemStatus.LIKED -> liked.size
-            LibraryItemStatus.VIEWED -> viewed.size
+    val listItems: Flow<PagingData<LibraryItem>> = combine(_selectedStatus, itemMap, _currentPage) { status, items, page ->
+        if (status == LibraryItemStatus.NONE) {
+            PagingData.empty()
+        } else {
+            val filtered = items.values
+                .filter { it.status == status }
+                .sortedBy { it.index }
+            
+            _totalPages.value = ((filtered.size + pageSize - 1) / pageSize).coerceAtLeast(1)
+            
+            val pagedItems = filtered.drop(page * pageSize).take(pageSize)
+            PagingData.from(pagedItems)
         }
-        (totalItems + LibraryConstants.PAGE_SIZE - 1) / LibraryConstants.PAGE_SIZE
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = 0
-    )
+    }.cachedIn(viewModelScope)
 
-    val items: StateFlow<List<LibraryItem>> = combine(
-        _selectedStatus,
-        _currentPage,
-        itemMap,
-        remotePageItems
-    ) { status, page, map, remote ->
-        when (status) {
-            LibraryItemStatus.NONE -> {
-                remote.map { item ->
-                    map[item.id] ?: item
-                }
-            }
-            LibraryItemStatus.LIKED -> {
-                map.values.filter { it.status == LibraryItemStatus.LIKED }
-                    .sortedBy { it.id }
-                    .drop(page * LibraryConstants.PAGE_SIZE)
-                    .take(LibraryConstants.PAGE_SIZE)
-            }
-            LibraryItemStatus.VIEWED -> {
-                map.values.filter { it.status == LibraryItemStatus.VIEWED }
-                    .sortedBy { it.id }
-                    .drop(page * LibraryConstants.PAGE_SIZE)
-                    .take(LibraryConstants.PAGE_SIZE)
-            }
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList()
-    )
 
     fun setPlugin(plugin: MediaPlugin?) {
-        // Only reset if the plugin has actually changed.
-        // This prevents the page number from resetting during orientation changes (rotation).
-        if (_currentPlugin.value?.info?.id == plugin?.info?.id) return
-
+        if (_currentPlugin.value?.metadata?.id == plugin?.metadata?.id) return
         _currentPlugin.value = plugin
-        _currentPage.value = 0
         _selectedStatus.value = LibraryItemStatus.NONE
+        _isQueryFiltered.value = false
+        _currentPage.value = 0
     }
 
     fun setStatus(status: LibraryItemStatus) {
-        _selectedStatus.value = status
+        if (_selectedStatus.value == LibraryItemStatus.NONE && status == LibraryItemStatus.NONE) {
+            _isQueryFiltered.value = !_isQueryFiltered.value
+        } else {
+            _selectedStatus.value = status
+            if (status != LibraryItemStatus.NONE) {
+                _isQueryFiltered.value = false
+            }
+        }
         _currentPage.value = 0
     }
 
     fun setPage(page: Int) {
         _currentPage.value = page
-    }
-
-    fun loadLibraryPage() {
-        val plugin = _currentPlugin.value ?: return
-        if (_selectedStatus.value != LibraryItemStatus.NONE) return
-
-        viewModelScope.launch {
-            _isLoading.value = true
-
-            try {
-                val offset = _currentPage.value * LibraryConstants.PAGE_SIZE
-                val query = LibraryQuery()
-                val fetchedItems = plugin.getLibraryItems(offset, LibraryConstants.PAGE_SIZE, query)
-
-                remotePageItems.value = fetchedItems
-                
-                fetchedItems.forEach { item ->
-                    LibraryManager.addItemToCache(plugin, item)
-                }
-            } catch (e: Exception) {
-                _errors.emit(e.message ?: "Failed to load page")
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun loadLibraryPageNumbers() {
-        val plugin = _currentPlugin.value ?: return
-        if (_selectedStatus.value != LibraryItemStatus.NONE) return
-
-        viewModelScope.launch {
-            try {
-                val query = LibraryQuery()
-                val count = plugin.getLibraryItemCount(query)
-                remoteTotalCount.value = count
-            } catch (e: Exception) {
-                _errors.emit(e.message ?: "Failed to load page numbers")
-            }
-        }
-    }
-
-    fun toggleExpanded(itemId: String) {
-        _expandedItemId.value = if (_expandedItemId.value == itemId) null else itemId
-    }
-
-    fun toggleLikeItem(context: Context, item: LibraryItem) {
-        val plugin = _currentPlugin.value ?: return
-        viewModelScope.launch {
-            val newStatus = if (item.status == LibraryItemStatus.LIKED) {
-                LibraryItemStatus.NONE
-            } else {
-                LibraryItemStatus.LIKED
-            }
-            LibraryManager.setItemStatus(context, plugin, item, newStatus)
-        }
-    }
-
-    fun toggleViewItem(context: Context, item: LibraryItem) {
-        val plugin = _currentPlugin.value ?: return
-        viewModelScope.launch {
-            val newStatus = if (item.status == LibraryItemStatus.VIEWED) {
-                LibraryItemStatus.NONE
-            } else {
-                LibraryItemStatus.VIEWED
-            }
-            LibraryManager.setItemStatus(context, plugin, item, newStatus)
-        }
     }
 }

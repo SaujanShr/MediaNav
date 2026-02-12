@@ -1,9 +1,12 @@
-package com.example.plugin_common.plugin.info
+package com.example.plugin_common.plugin
+
+import kotlin.collections.get
 
 enum class PluginCategory(val value: String) {
-    ART("Art"),
+    AUDIO("Audio"),
+    BOOK("Book"),
     GAME("Game"),
-    LEAK("Leak"),
+    IMAGE("Image"),
     VIDEO("Video"),
     UNKNOWN("Unknown");
 

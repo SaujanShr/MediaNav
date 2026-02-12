@@ -4,7 +4,5 @@ enum class SettingType {
     THEME,
     INSTALL,
     UNINSTALL,
-    TOGGLE,
-    SYNC,
-    SECRETS
+    TOGGLE
 }

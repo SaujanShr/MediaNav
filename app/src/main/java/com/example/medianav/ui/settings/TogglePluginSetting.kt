@@ -84,15 +84,13 @@ private fun PluginItem(
     plugin: MediaPlugin,
     enabled: Boolean
 ) {
-    val context = LocalContext.current
-
     Plugin(plugin,
         content = {
         Switch(
             checked = enabled,
             onCheckedChange = { checked ->
-                settingsViewModel.setEnabled(context, plugin, checked)
-                if (plugin.info.id == pluginViewModel.currentPlugin.value?.info?.id) {
+                settingsViewModel.setEnabled(plugin, checked)
+                if (plugin.metadata.id == pluginViewModel.currentPlugin.value?.metadata?.id) {
                     pluginViewModel.clearPlugin()
                 }
             }

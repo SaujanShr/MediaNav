@@ -49,9 +49,8 @@ internal object JikanConverter {
 
     fun Anime.toLibraryItem() = LibraryItem(
         id = malId.toString(),
-        title = titles.firstOrDefault("Undefined") { title ->
-            title.title
-        }
+        title = titles.firstOrDefault("Undefined") { title -> title.title },
+        thumbnailUrl = images.jpg.largeImageUrl!!
     )
 
     private fun buildGenresInclude(

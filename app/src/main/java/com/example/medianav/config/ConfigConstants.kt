@@ -5,6 +5,5 @@ internal object ConfigConstants {
 
     object Keys {
         const val THEME = "theme"
-        const val SECRETS = "secrets"
     }
 }

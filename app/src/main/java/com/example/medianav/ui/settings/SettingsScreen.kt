@@ -47,8 +47,6 @@ fun SettingsScreen(
             InstallPluginSetting(settingsViewModel)
             UninstallPlugin(settingsViewModel, pluginViewModel)
             TogglePluginSetting(settingsViewModel, pluginViewModel)
-            PluginSecretsSetting(settingsViewModel, pluginViewModel)
-            SyncLibrarySetting(settingsViewModel, pluginViewModel)
 
             SettingsSectionHeader("Display")
             ThemeSetting(settingsViewModel)

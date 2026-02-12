@@ -11,6 +11,8 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.example.medianav.ui.home.HomeScreen
 import com.example.medianav.ui.library.LibraryScreen
+import com.example.medianav.ui.media.MediaScreen
+import com.example.medianav.ui.media.MediaViewModel
 import com.example.medianav.ui.settings.SettingsScreen
 
 
@@ -22,26 +24,28 @@ fun NavApplication() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavDestination.entries.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentDestination?.route == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
+            if (currentDestination?.route != NavDestination.Media.route) {
+                NavigationBar {
+                    NavDestination.entries.filter { it != NavDestination.Media }.forEach { destination ->
+                        NavigationBarItem(
+                            selected = currentDestination?.route == destination.route,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = null
-                            )
-                        },
-                    )
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = null
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -60,6 +64,7 @@ private fun AppNavHost(
     modifier: Modifier
 ) {
     val pluginViewModel: PluginViewModel = viewModel()
+    val mediaViewModel: MediaViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -70,10 +75,19 @@ private fun AppNavHost(
             HomeScreen(pluginViewModel = pluginViewModel)
         }
         composable(NavDestination.Library.route) {
-            LibraryScreen(pluginViewModel = pluginViewModel)
+            LibraryScreen(
+                pluginViewModel = pluginViewModel,
+                onItemClick = { item, plugin ->
+                    mediaViewModel.setMedia(item, plugin)
+                    navController.navigate(NavDestination.Media.route)
+                }
+            )
         }
         composable(NavDestination.Settings.route) {
             SettingsScreen(pluginViewModel = pluginViewModel)
+        }
+        composable(NavDestination.Media.route) {
+            MediaScreen(viewModel = mediaViewModel)
         }
     }
 }

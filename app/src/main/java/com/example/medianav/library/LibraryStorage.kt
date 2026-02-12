@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.plugin_common.library.LibraryItem
+import com.example.plugin_common.plugin.MediaPlugin
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.catch
@@ -21,7 +22,7 @@ internal object LibraryStorage {
     private val nestedMapType =
         object : TypeToken<MutableMap<String, MutableMap<String, LibraryItem>>>() {}.type
 
-    fun libraryItemsMap(context: Context) =
+    fun getLibraryItemsMap(context: Context) =
         context.libraryDataStore.data
             .catch { e ->
                 if (e is IOException) emit(emptyPreferences())
@@ -29,18 +30,18 @@ internal object LibraryStorage {
             }
             .map { prefs -> getLibraryItemsMap(prefs) }
 
-    suspend fun saveItem(context: Context, pluginId: String, item: LibraryItem) =
+    suspend fun addItemForPlugin(context: Context, plugin: MediaPlugin, item: LibraryItem) =
         context.libraryDataStore.edit { prefs ->
             val map = getLibraryItemsMap(prefs)
-            val pluginMap = map.getOrPut(pluginId) { mutableMapOf() }
+            val pluginMap = map.getOrPut(plugin.metadata.id) { mutableMapOf() }
             pluginMap[item.id] = item
             prefs[itemsKey] = gson.toJson(map)
         }
 
-    suspend fun removeItemsForPlugin(context: Context, pluginId: String) =
+    suspend fun removeItemsForPlugin(context: Context, plugin: MediaPlugin) =
         context.libraryDataStore.edit { prefs ->
             val map = getLibraryItemsMap(prefs)
-            val removed = map.remove(pluginId) != null
+            val removed = map.remove(plugin.metadata.id) != null
             if (removed) prefs[itemsKey] = gson.toJson(map)
         }
 

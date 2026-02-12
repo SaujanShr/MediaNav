@@ -1,29 +1,39 @@
 package com.example.plugin_common.plugin
 
 import androidx.compose.runtime.Composable
+import androidx.paging.PagingData
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.schema.QuerySchema
-import com.example.plugin_common.plugin.info.PluginInfo
+import kotlinx.coroutines.flow.Flow
 
 interface MediaPlugin {
-    val info: PluginInfo
+    val metadata: PluginMetadata
+    val resources: PluginResources
     val querySchema: QuerySchema
 
-    suspend fun getLibraryItems(
-        offset: Int,
-        limit: Int,
-        query: LibraryQuery
-    ) : List<LibraryItem>
+    suspend fun initialize()
 
-    suspend fun getLibraryItemCount(query: LibraryQuery): Int
+    fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>>
 
     @Composable
-    fun Thumbnail(item: LibraryItem)
+    fun Thumbnail(item: LibraryItem, onClick: () -> Unit)
 
     @Composable
-    fun DetailsContent(item: LibraryItem)
+    fun PreviewContent(item: LibraryItem)
 
     @Composable
-    fun DropdownContent(item: LibraryItem)
+    fun SummaryContent(item: LibraryItem)
+
+    @Composable
+    fun DescriptionContent(item: LibraryItem)
+
+    @Composable
+    fun AttributeContent(item: LibraryItem)
+
+    @Composable
+    fun PlayableContent(item: LibraryItem)
+
+    @Composable
+    fun SettingsContent()
 }

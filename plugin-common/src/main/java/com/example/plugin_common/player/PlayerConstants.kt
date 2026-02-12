@@ -1,4 +1,4 @@
-package com.example.plugin_common.media
+package com.example.plugin_common.player
 
 object PlayerConstants {
     object Image {

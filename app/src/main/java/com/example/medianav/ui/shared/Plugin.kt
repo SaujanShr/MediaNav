@@ -22,7 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.example.medianav.util.toTitleCase
+import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
@@ -51,17 +51,17 @@ fun Plugin(
 @Composable
 private fun PluginContent(plugin: MediaPlugin) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        PluginIcon(plugin.info.icon)
+        PluginIcon(plugin.resources.icon)
 
         Spacer(Modifier.width(20.dp))
 
         Column {
             Text(
-                text = plugin.info.name,
+                text = plugin.metadata.name,
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = plugin.info.category.value.toTitleCase(),
+                text = plugin.metadata.category.value.toTitleCase(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

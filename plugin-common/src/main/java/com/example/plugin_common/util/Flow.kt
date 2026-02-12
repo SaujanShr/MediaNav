@@ -1,4 +1,4 @@
-package com.example.medianav.util
+package com.example.plugin_common.util
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch

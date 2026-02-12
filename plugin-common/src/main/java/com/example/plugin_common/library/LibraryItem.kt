@@ -1,9 +1,11 @@
 package com.example.plugin_common.library
 
-import com.example.plugin_common.media.Media
-
 data class LibraryItem(
     val id: String,
     val title: String,
-    val status: LibraryItemStatus = LibraryItemStatus.NONE
+    val thumbnailUrl: String,
+    val index: Int = 0,
+    val saved: Boolean = false,
+    val status: LibraryItemStatus = LibraryItemStatus.NONE,
+    val lastUpdated: Long = System.currentTimeMillis()
 )

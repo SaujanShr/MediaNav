@@ -8,10 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.medianav.config.ConfigManager
 import com.example.medianav.ui.theme.Theme
 import com.example.medianav.plugin.PluginManager
-import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.plugin.MediaPlugin
-import com.example.plugin_common.plugin.ManualPlugin
-import com.example.plugin_common.plugin.SecretPlugin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,9 +23,14 @@ class SettingsViewModel : ViewModel() {
     val expandedSetting: StateFlow<SettingType?> = _expandedSetting.asStateFlow()
 
     val theme = ConfigManager.theme
+    val plugins = PluginManager.plugins
 
     fun toggleExpanded(setting: SettingType) {
         _expandedSetting.value = if (_expandedSetting.value == setting) null else setting
+    }
+
+    fun isPluginEnabled(plugin: MediaPlugin): Flow<Boolean> {
+        return PluginManager.isEnabled(plugin)
     }
 
     fun installPlugin(context: Context, uri: Uri?) {
@@ -40,7 +42,7 @@ class SettingsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val file = copyUriToCache(context, uri)
-                PluginManager.installPlugin(context, file.absolutePath)
+                PluginManager.addPlugin(file.absolutePath)
                     .onFailure {
                         emitError(it.message ?: "Failed to install plugin")
                     }
@@ -50,40 +52,21 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
-    fun uninstallPlugin(context: Context, plugin: MediaPlugin) {
+    fun uninstallPlugin(plugin: MediaPlugin) {
         viewModelScope.launch {
-            PluginManager.uninstallPlugin(context, plugin)
+            PluginManager.removePlugin(plugin)
         }
     }
 
-    fun syncPlugin(plugin: ManualPlugin, query: LibraryQuery) {
+    fun setEnabled(plugin: MediaPlugin, enabled: Boolean) {
         viewModelScope.launch {
-            if (!plugin.isSyncing.value) {
-                plugin.sync(query)
-            }
+            PluginManager.setEnabled(plugin, enabled)
         }
     }
 
-    fun setEnabled(context: Context, plugin: MediaPlugin, enabled: Boolean) {
+    fun setTheme(theme: Theme) {
         viewModelScope.launch {
-            PluginManager.setEnabled(context, plugin, enabled)
-        }
-    }
-
-    fun setTheme(context: Context, theme: Theme) {
-        viewModelScope.launch {
-            ConfigManager.setTheme(context, theme)
-        }
-    }
-
-    fun secretsForPlugin(plugin: SecretPlugin): Map<String, String> =
-        ConfigManager.secretsForPlugin(plugin)
-
-    fun saveSecret(context: Context, plugin: SecretPlugin, key: String, value: String) {
-        viewModelScope.launch {
-            val currentSecrets = ConfigManager.secretsForPlugin(plugin).toMutableMap()
-            currentSecrets[key] = value
-            ConfigManager.setSecretsForPlugin(context, plugin, currentSecrets)
+            ConfigManager.setTheme(theme)
         }
     }
 

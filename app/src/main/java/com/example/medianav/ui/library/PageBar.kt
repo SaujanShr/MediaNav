@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,15 +39,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
-internal fun PageBar(
-    currentPage: Int,
-    totalPages: Int,
-    onPageSelected: (Int) -> Unit
-) {
+internal fun PageBar(libraryViewModel: LibraryViewModel) {
+    val currentPage by libraryViewModel.currentPage.collectAsState()
+    val totalPages by libraryViewModel.totalPages.collectAsState()
+
     var showJumpDialog by remember { mutableStateOf(false) }
+    val onPageSelected = { page: Int ->
+        libraryViewModel.setPage(page)
+    }
+
 
     if (totalPages > 1) {
         Surface(

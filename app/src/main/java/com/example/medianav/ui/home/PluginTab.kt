@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.medianav.ui.shared.NoPlugin
 import com.example.medianav.ui.shared.Plugin
-import com.example.medianav.util.toTitleCase
+import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
-import com.example.plugin_common.plugin.info.PluginCategory
+import com.example.plugin_common.plugin.PluginCategory
 
 
 private val tabs = listOf("All") + PluginCategory.entries.map {
@@ -120,5 +120,5 @@ private fun getFilteredPlugins(plugins: List<MediaPlugin>, selectedIndex: Int): 
     val category = PluginCategory.entries.getOrNull(selectedIndex - 1)
         ?: return emptyList()
 
-    return plugins.filter { it.info.category == category }
+    return plugins.filter { it.metadata.category == category }
 }

@@ -1,5 +1,6 @@
-package com.example.plugin_common.media
+package com.example.plugin_common.player
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,33 +17,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.Listener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import coil.compose.AsyncImage
+import java.io.File
+
+data class VideoPlayer(val repeatMode: Int = Player.REPEAT_MODE_OFF) {
+    @Composable
+    fun Remote(thumbnailUrl: String, videoUrl: String) {
+        val (player, isBuffering, hasError) = rememberVideoPlayer(
+            uri = videoUrl.toUri(),
+            key = videoUrl,
+            repeatMode = repeatMode
+        )
+        Video(player, thumbnailUrl, isBuffering, hasError)
+    }
+
+    @Composable
+    fun Local(thumbnailFile: File, videoFile: File) {
+        val (player, isBuffering, hasError) = rememberVideoPlayer(
+            uri = Uri.fromFile(videoFile),
+            key = videoFile.absolutePath,
+            repeatMode = repeatMode
+        )
+        Video(player, thumbnailFile, isBuffering, hasError)
+    }
+}
 
 @Composable
-internal fun VideoPlayer(video: Media, onFinished: (() -> Unit)? = null) {
+private fun Video(
+    player: ExoPlayer,
+    thumbnail: Any,
+    isBuffering: Boolean,
+    hasError: Boolean
+) {
     var isFullscreen by rememberSaveable { mutableStateOf(false) }
-    var isBuffering by remember { mutableStateOf(false) }
-    var hasError by remember { mutableStateOf(false) }
-
-    val player = rememberVideoPlayer(
-        video,
-        onBufferingChange = { isBuffering = it },
-        onErrorChange = { hasError = it },
-        onFinished = onFinished
-    )
 
     if (isFullscreen) {
         FullscreenVideoDialog(
             player,
+            thumbnail,
             isBuffering,
             hasError,
             onDismiss = { isFullscreen = false }
@@ -50,6 +74,7 @@ internal fun VideoPlayer(video: Media, onFinished: (() -> Unit)? = null) {
     } else {
         Video(
             player,
+            thumbnail,
             isBuffering,
             hasError,
             onToggleFullscreen = { isFullscreen = true }
@@ -57,49 +82,46 @@ internal fun VideoPlayer(video: Media, onFinished: (() -> Unit)? = null) {
     }
 }
 
-private fun buildListener(
-    onBufferingChange: (Boolean) -> Unit,
-    onErrorChange: (Boolean) -> Unit,
-    onFinished: (() -> Unit)?
-): Listener {
-    return object : Listener {
-        override fun onPlaybackStateChanged(state: Int) {
-            onBufferingChange(state == Player.STATE_BUFFERING)
-            if (state == Player.STATE_READY) {
-                onErrorChange(false)
-            }
-            if (state == Player.STATE_ENDED) {
-                onFinished?.invoke()
-            }
-        }
-
-        override fun onPlayerError(error: PlaybackException) {
-            onBufferingChange(false)
-            onErrorChange(true)
-        }
-    }
-}
+private data class VideoPlayerResult(
+    val player: ExoPlayer,
+    val isBuffering: Boolean,
+    val hasError: Boolean
+)
 
 @Composable
 private fun rememberVideoPlayer(
-    video: Media,
-    onBufferingChange: (Boolean) -> Unit,
-    onErrorChange: (Boolean) -> Unit,
-    onFinished: (() -> Unit)?
-): ExoPlayer {
+    uri: Uri,
+    key: String,
+    repeatMode: Int
+): VideoPlayerResult {
     val context = LocalContext.current
-    var lastPosition by rememberSaveable { mutableLongStateOf(0L) }
+    var lastPosition by rememberSaveable(key) { mutableLongStateOf(0L) }
 
-    val player = remember(video) {
+    var isBuffering by remember { mutableStateOf(false) }
+    var hasError by remember { mutableStateOf(false) }
+
+    val player = remember(key) {
         ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-            setMediaItem(MediaItem.fromUri(video.url))
+            this.repeatMode = repeatMode
+            setMediaItem(MediaItem.fromUri(uri))
             seekTo(lastPosition)
         }
     }
 
     DisposableEffect(player) {
-        val listener = buildListener(onBufferingChange, onErrorChange, onFinished)
+        val listener = object : Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                isBuffering = state == Player.STATE_BUFFERING
+                if (state == Player.STATE_READY) {
+                    hasError = false
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                isBuffering = false
+                hasError = true
+            }
+        }
         player.addListener(listener)
         player.prepare()
 
@@ -110,7 +132,7 @@ private fun rememberVideoPlayer(
         }
     }
 
-    return player
+    return VideoPlayerResult(player, isBuffering, hasError)
 }
 
 @Composable
@@ -134,11 +156,19 @@ private fun PlayerSurface(player: ExoPlayer, onToggleFullscreen: () -> Unit) {
 }
 
 @Composable
-private fun Overlay(isBuffering: Boolean, hasError: Boolean) {
+private fun Overlay(thumbnail: Any, isBuffering: Boolean, hasError: Boolean) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize()
     ) {
+        if (isBuffering && !hasError) {
+            AsyncImage(
+                model = thumbnail,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         if (hasError) {
             Text(text = "Oops! Something went wrong.", color = Color.White)
         } else if (isBuffering) {
@@ -150,19 +180,21 @@ private fun Overlay(isBuffering: Boolean, hasError: Boolean) {
 @Composable
 private fun Video(
     player: ExoPlayer,
+    thumbnail: Any,
     isBuffering: Boolean,
     hasError: Boolean,
     onToggleFullscreen: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         PlayerSurface(player, onToggleFullscreen)
-        Overlay(isBuffering, hasError)
+        Overlay(thumbnail, isBuffering, hasError)
     }
 }
 
 @Composable
 private fun FullscreenVideoDialog(
     player: ExoPlayer,
+    thumbnail: Any,
     isBuffering: Boolean,
     hasError: Boolean,
     onDismiss: () -> Unit
@@ -174,6 +206,6 @@ private fun FullscreenVideoDialog(
             decorFitsSystemWindows = false
         )
     ) {
-        Video(player, isBuffering, hasError, onToggleFullscreen = onDismiss)
+        Video(player, thumbnail, isBuffering, hasError, onToggleFullscreen = onDismiss)
     }
 }
