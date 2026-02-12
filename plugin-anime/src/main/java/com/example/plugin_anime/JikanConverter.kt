@@ -27,16 +27,16 @@ internal object JikanConverter {
             limit = limit,
             q = searchFields["search"],
             type = filterFields["type"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryType.valueOf(it)
+                AnimeSearchQueryType.fromValue(it)
             },
             status = filterFields["status"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryStatus.valueOf(it)
+                AnimeSearchQueryStatus.fromValue(it)
             },
             sfw = booleanFields["sfw"],
             genres = genresInclude.joinToString(","),
             genresExclude = genresExclude.joinToString(","),
             orderBy = sortFields["orderBy"]?.sort?.let {
-                AnimeSearchQueryOrderBy.valueOf(it)
+                AnimeSearchQueryOrderBy.fromValue(it)
             },
             sort = sortFields["orderBy"]?.direction?.let {
                 when (it) {
@@ -50,7 +50,6 @@ internal object JikanConverter {
     fun Anime.toLibraryItem() = LibraryItem(
         id = malId.toString(),
         title = titles.firstOrDefault("Undefined") { title -> title.title },
-        thumbnailUrl = images.jpg.largeImageUrl!!
     )
 
     private fun buildGenresInclude(

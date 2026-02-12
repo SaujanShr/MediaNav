@@ -11,4 +11,13 @@ data class LibraryQuery(
     val dateFields: Map<String, Pair<LocalDate?, LocalDate?>> = emptyMap(),
     val filterFields: Map<String, FilterExpression> = emptyMap(),
     val sortFields: Map<String, SortExpression> = emptyMap()
-)
+) {
+    fun isEmpty(): Boolean {
+        return searchFields.isEmpty()
+                && booleanFields.isEmpty()
+                && numberFields.isEmpty()
+                && dateFields.isEmpty()
+                && filterFields.isEmpty()
+                && sortFields.isEmpty()
+    }
+}

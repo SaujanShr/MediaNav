@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medianav.config.ConfigManager
+import com.example.medianav.library.LibraryManager
 import com.example.medianav.ui.theme.Theme
 import com.example.medianav.plugin.PluginManager
 import com.example.plugin_common.plugin.MediaPlugin
@@ -55,6 +56,7 @@ class SettingsViewModel : ViewModel() {
     fun uninstallPlugin(plugin: MediaPlugin) {
         viewModelScope.launch {
             PluginManager.removePlugin(plugin)
+            LibraryManager.removeItemsForPlugin(plugin)
         }
     }
 

@@ -21,6 +21,8 @@ import com.example.plugin_anime.domain.AnimeSearchQueryStatus
 import com.example.plugin_anime.domain.AnimeSearchQueryType
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
+import com.example.plugin_common.library.expression.SortDirection
+import com.example.plugin_common.library.expression.SortExpression
 import com.example.plugin_common.library.schema.QuerySchema
 import com.example.plugin_common.library.schema.field.BooleanFieldSchema
 import com.example.plugin_common.library.schema.field.FilterFieldSchema
@@ -54,6 +56,14 @@ class AnimePlugin : MediaPlugin {
     private val animeCache = mutableMapOf<Int, Anime>()
     private val genreCache = runBlocking { service.genreCache() }
     private val cacheMutex = Mutex()
+
+    private val initialQuery = LibraryQuery(
+        sortFields = mapOf(
+            JikanConstants.Query.ORDER_BY to SortExpression(
+                AnimeSearchQueryOrderBy.SCORE.value,
+                SortDirection.DESC
+            ))
+    )
 
     private val thumbnailPlayer = ThumbnailPlayer(75f / 106f)
     private val previewPlayer = PreviewPlayer(75f / 106f)
@@ -90,8 +100,9 @@ class AnimePlugin : MediaPlugin {
         }
     )
 
-    override fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>> =
-        createLibraryPager(
+    override fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>> {
+        val query = if (query.isEmpty()) initialQuery else query
+        return createLibraryPager(
             pageSize = 10,
             pagingSourceFactory = { initialPage, totalCount, totalPages, currentPage ->
                 AnimePagingSource(
@@ -107,6 +118,7 @@ class AnimePlugin : MediaPlugin {
                 )
             }
         )
+    }
 
     @Composable
     override fun Thumbnail(item: LibraryItem, onClick: () -> Unit) {
@@ -215,6 +227,13 @@ class AnimePlugin : MediaPlugin {
         LaunchedEffect(item.id) {
             cacheMutex.withLock {
                 anime = animeCache[item.id.toIntOrNull()]
+                if (anime == null) {
+                    service.getAnimeById(item.id.toInt(), genreCache)
+                        .onSuccess { response ->
+                            anime = response.data
+                            animeCache[item.id.toInt()] = response.data
+                        }
+                }
             }
         }
 

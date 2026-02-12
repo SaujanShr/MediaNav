@@ -1,5 +1,8 @@
 package com.example.plugin_anime.domain
 
+import com.example.plugin_anime.domain.AnimeSearchQueryOrderBy.POPULARITY
+import com.example.plugin_anime.domain.AnimeSearchQueryRating.PG_13
+import com.example.plugin_anime.domain.AnimeSearchQueryStatus.AIRING
 import com.google.gson.annotations.SerializedName
 
 internal data class AnimeSearchQuery(
@@ -66,7 +69,13 @@ internal enum class AnimeSearchQueryType(val value: String) {
     PV("PV"),
 
     @SerializedName("tv_special")
-    TV_SPECIAL("TV Special")
+    TV_SPECIAL("TV Special");
+
+    companion object {
+        private val map = entries.associateBy(AnimeSearchQueryType::value)
+
+        fun fromValue(value: String) = map[value] ?: TV
+    }
 }
 
 internal enum class AnimeSearchQueryStatus(val value: String) {
@@ -77,7 +86,13 @@ internal enum class AnimeSearchQueryStatus(val value: String) {
     COMPLETE("Complete"),
 
     @SerializedName("upcoming")
-    UPCOMING("Upcoming")
+    UPCOMING("Upcoming");
+
+    companion object {
+        private val map = entries.associateBy(AnimeSearchQueryStatus::value)
+
+        fun fromValue(value: String) = map[value] ?: AIRING
+    }
 }
 
 internal enum class AnimeSearchQueryRating(val value: String) {
@@ -132,7 +147,13 @@ internal enum class AnimeSearchQueryOrderBy(val value: String) {
     MEMBERS("Members"),
 
     @SerializedName("favorites")
-    FAVORITES("Favorites")
+    FAVORITES("Favorites");
+
+    companion object {
+        private val map = entries.associateBy(AnimeSearchQueryOrderBy::value)
+
+        fun fromValue(value: String) = map[value] ?: POPULARITY
+    }
 }
 
 internal enum class SearchQuerySort(val value: String) {

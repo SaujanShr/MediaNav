@@ -18,6 +18,14 @@ internal class AnimeService {
         return api.getAnimeSearch(query)
     }
 
+    suspend fun getAnimeById(
+        id: Int,
+        genreCache: Map<GenreQueryFilter, List<Genre>>
+    ): Result<AnimeByIdResponse> {
+        val param = AnimeByIdParam(id.toString())
+        return api.getAnimeById(param)
+    }
+
     suspend fun genreCache(): Map<GenreQueryFilter, List<Genre>> = runCatching {
         GenreQueryFilter.entries
             .mapAsyncNotNull { filter ->

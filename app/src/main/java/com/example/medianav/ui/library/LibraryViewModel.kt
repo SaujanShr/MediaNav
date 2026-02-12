@@ -6,6 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
+import com.example.medianav.library.LibraryConstants
 import com.example.medianav.library.LibraryManager
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
@@ -23,11 +24,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-
-enum class LibraryMode {
-    QUERY, LIST
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModel : ViewModel() {
     private val _errors = MutableSharedFlow<String>()
@@ -47,8 +43,6 @@ class LibraryViewModel : ViewModel() {
 
     private val _totalPages = MutableStateFlow(1)
     val totalPages = _totalPages.asStateFlow()
-
-    private val pageSize = 9
 
     val mode: Flow<LibraryMode> = _selectedStatus.map {
         if (it == LibraryItemStatus.NONE) LibraryMode.QUERY else LibraryMode.LIST
@@ -84,10 +78,15 @@ class LibraryViewModel : ViewModel() {
             val filtered = items.values
                 .filter { it.status == status }
                 .sortedBy { it.index }
-            
-            _totalPages.value = ((filtered.size + pageSize - 1) / pageSize).coerceAtLeast(1)
-            
-            val pagedItems = filtered.drop(page * pageSize).take(pageSize)
+
+            _totalPages.value =
+                ((filtered.size + LibraryConstants.PAGE_SIZE - 1) / LibraryConstants.PAGE_SIZE)
+                .coerceAtLeast(1)
+
+            val pagedItems = filtered
+                .drop(page * LibraryConstants.PAGE_SIZE)
+                .take(LibraryConstants.PAGE_SIZE)
+
             PagingData.from(pagedItems)
         }
     }.cachedIn(viewModelScope)

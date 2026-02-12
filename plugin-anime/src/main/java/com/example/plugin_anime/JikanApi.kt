@@ -1,5 +1,8 @@
 package com.example.plugin_anime
 
+import com.example.plugin_anime.domain.Anime
+import com.example.plugin_anime.domain.AnimeByIdParam
+import com.example.plugin_anime.domain.AnimeByIdResponse
 import com.google.gson.Gson
 import com.example.plugin_anime.domain.AnimeGenreQuery
 import com.example.plugin_anime.domain.AnimeGenreResponse
@@ -25,6 +28,14 @@ internal class JikanApi {
 
         return api.get(url).mapCatching { responseString ->
             gson.fromJson(responseString, AnimeGenreResponse::class.java)
+        }
+    }
+
+    suspend fun getAnimeById(param: AnimeByIdParam): Result<AnimeByIdResponse> {
+        val url = buildApiUrl(JikanConstants.Url.ANIME_BY_ID, pathParams = param)
+
+        return api.get(url).mapCatching { responseString ->
+            gson.fromJson(responseString, AnimeByIdResponse::class.java)
         }
     }
 }

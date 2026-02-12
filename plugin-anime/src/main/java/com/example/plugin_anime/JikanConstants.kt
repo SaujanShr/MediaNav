@@ -9,6 +9,8 @@ internal object JikanConstants {
         const val BASE_URL = "https://api.jikan.moe/v4"
         const val ANIME_SEARCH = "$BASE_URL/anime"
         const val ANIME_GENRES = "$BASE_URL/genres/anime"
+        const val ANIME_BY_ID = "$BASE_URL/anime/{id}"
+
     }
 
     object Query {

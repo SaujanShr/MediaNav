@@ -56,8 +56,7 @@ object LibraryManager {
         val index = nextItemIndexForStatus(plugin, status)
         val updatedItem = item.copy(status = status, index = index)
 
-        LibraryStorage.addItemForPlugin(appContext, plugin, updatedItem)
-        setItemInCache(plugin, updatedItem)
+        addItem(plugin, updatedItem)
     }
 
     suspend fun setItemIndex(

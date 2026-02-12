@@ -43,7 +43,7 @@ fun LibraryScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             LibraryHeader(libraryViewModel)
 
-            Box(modifier = Modifier.weight(1f)) {
+            Box {
                 when (mode) {
                     LibraryMode.QUERY -> QueryMode(
                         viewModel = libraryViewModel,
@@ -53,15 +53,13 @@ fun LibraryScreen(
                         }
                     )
                     LibraryMode.LIST -> Column(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            ListMode(
-                                viewModel = libraryViewModel,
-                                plugin = currentPlugin,
-                                onItemClick = { item ->
-                                    currentPlugin?.let { onItemClick(item, it) }
-                                }
-                            )
-                        }
+                        ListMode(
+                            viewModel = libraryViewModel,
+                            plugin = currentPlugin,
+                            onItemClick = { item ->
+                                currentPlugin?.let { onItemClick(item, it) }
+                            }
+                        )
                         PageBar(libraryViewModel)
                     }
                 }
