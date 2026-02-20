@@ -11,7 +11,6 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.example.medianav.ui.home.HomeScreen
 import com.example.medianav.ui.library.LibraryScreen
-import com.example.medianav.ui.media.MediaScreen
 import com.example.medianav.ui.settings.SettingsScreen
 
 
@@ -63,7 +62,6 @@ private fun AppNavHost(
     modifier: Modifier
 ) {
     val pluginViewModel: PluginViewModel = viewModel()
-    val itemViewModel: ItemViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -75,18 +73,11 @@ private fun AppNavHost(
         }
         composable(NavDestination.Library.route) {
             LibraryScreen(
-                pluginViewModel = pluginViewModel,
-                onItemClick = { item, plugin ->
-                    itemViewModel.setItem(item, plugin)
-                    navController.navigate(NavDestination.Media.route)
-                }
+                pluginViewModel = pluginViewModel
             )
         }
         composable(NavDestination.Settings.route) {
             SettingsScreen(pluginViewModel = pluginViewModel)
-        }
-        composable(NavDestination.Media.route) {
-            MediaScreen(viewModel = itemViewModel)
         }
     }
 }

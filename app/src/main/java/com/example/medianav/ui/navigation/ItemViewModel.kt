@@ -50,8 +50,22 @@ class ItemViewModel : ViewModel() {
 
         viewModelScope.launch {
             val newStatus = if (item.status == status) LibraryItemStatus.NONE else status
-            LibraryManager.setItemStatus(plugin, item, newStatus)
+            LibraryManager.setStatus(plugin, item, newStatus)
             _selectedItem.value = item.copy(status = newStatus)
+        }
+    }
+
+    fun toggleSaved() {
+        val item = selectedItem.value ?: return
+        val plugin = _currentPlugin.value ?: return
+
+        viewModelScope.launch {
+            val newSaved = !item.saved
+            val newItem = item.copy(
+                saved = newSaved,
+                lastAccessed = System.currentTimeMillis()
+            )
+            LibraryManager.addItem(plugin, newItem)
         }
     }
 }

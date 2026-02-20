@@ -48,18 +48,18 @@ object LibraryManager {
         }
     }
 
-    suspend fun setItemStatus(
+    suspend fun setStatus(
         plugin: MediaPlugin,
         item: LibraryItem,
         status: LibraryItemStatus
     ) = mutex.withLock {
-        val index = nextItemIndexForStatus(plugin, status)
+        val index = nextIndexForStatus(plugin, status)
         val updatedItem = item.copy(status = status, index = index)
 
         addItem(plugin, updatedItem)
     }
 
-    suspend fun setItemIndex(
+    suspend fun setIndex(
         plugin: MediaPlugin,
         item: LibraryItem,
         index: Int
@@ -70,7 +70,7 @@ object LibraryManager {
         setItemInCache(plugin, updatedItem)
     }
 
-    private fun nextItemIndexForStatus(plugin: MediaPlugin, status: LibraryItemStatus) =
+    private fun nextIndexForStatus(plugin: MediaPlugin, status: LibraryItemStatus) =
         if (status == LibraryItemStatus.NONE) {
             0
         } else {

@@ -18,13 +18,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.medianav.ui.shared.ErrorBanner
 import com.example.plugin_common.library.LibraryItem
-import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
 fun LibraryScreen(
     libraryViewModel: LibraryViewModel = viewModel(),
-    pluginViewModel: PluginViewModel,
-    onItemClick: (LibraryItem, MediaPlugin) -> Unit
+    pluginViewModel: PluginViewModel
 ) {
     val errorMessages = remember { mutableStateListOf<String>() }
 
@@ -33,34 +31,45 @@ fun LibraryScreen(
     }
 
     val currentPlugin by pluginViewModel.currentPlugin.collectAsState()
-    val mode by libraryViewModel.mode.collectAsState(initial = LibraryMode.QUERY)
+    val mode by libraryViewModel.mode.collectAsState()
+    val selectedItem by libraryViewModel.selectedItem.collectAsState()
 
     LaunchedEffect(currentPlugin) {
         libraryViewModel.setPlugin(currentPlugin)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            LibraryHeader(libraryViewModel)
+        if (selectedItem != null) {
+            // Show media detail screen
+            MediaDetailScreen(
+                viewModel = libraryViewModel,
+                onBack = { libraryViewModel.clearSelectedItem() }
+            )
+        } else {
+            // Show library list
+            Column(modifier = Modifier.fillMaxSize()) {
+                LibraryHeader(libraryViewModel)
 
-            Box {
-                when (mode) {
-                    LibraryMode.QUERY -> QueryMode(
-                        viewModel = libraryViewModel,
-                        plugin = currentPlugin,
-                        onItemClick = { item ->
-                            currentPlugin?.let { onItemClick(item, it) }
-                        }
-                    )
-                    LibraryMode.LIST -> Column(modifier = Modifier.fillMaxSize()) {
-                        ListMode(
+                Box {
+                    when (mode) {
+                        LibraryMode.QUERY, LibraryMode.QUERY_NEW_ONLY -> QueryMode(
                             viewModel = libraryViewModel,
                             plugin = currentPlugin,
                             onItemClick = { item ->
-                                currentPlugin?.let { onItemClick(item, it) }
+                                // For query mode, we'll pass an empty list since paging makes it complex
+                                libraryViewModel.selectItem(item, emptyList())
                             }
                         )
-                        PageBar(libraryViewModel)
+                        LibraryMode.LIST, LibraryMode.EDIT, LibraryMode.SAVED, LibraryMode.SAVED_BY_DATE -> Column(modifier = Modifier.fillMaxSize()) {
+                            ListMode(
+                                viewModel = libraryViewModel,
+                                plugin = currentPlugin,
+                                onItemClick = { item: LibraryItem, itemsList: List<LibraryItem> ->
+                                    libraryViewModel.selectItem(item, itemsList)
+                                }
+                            )
+                            PageBar(libraryViewModel)
+                        }
                     }
                 }
             }

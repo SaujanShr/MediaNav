@@ -6,5 +6,5 @@ data class LibraryItem(
     val index: Int = 0,
     val saved: Boolean = false,
     val status: LibraryItemStatus = LibraryItemStatus.NONE,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastAccessed: Long = System.currentTimeMillis()
 )

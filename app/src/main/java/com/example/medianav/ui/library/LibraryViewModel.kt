@@ -24,6 +24,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlin.collections.filter
+import kotlin.collections.sortedBy
+import kotlin.collections.sortedByDescending
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModel : ViewModel() {
     private val _errors = MutableSharedFlow<String>()
@@ -35,18 +40,34 @@ class LibraryViewModel : ViewModel() {
     private val _selectedStatus = MutableStateFlow(LibraryItemStatus.NONE)
     val selectedStatus = _selectedStatus.asStateFlow()
 
-    private val _isQueryFiltered = MutableStateFlow(false)
-    val isQueryFiltered = _isQueryFiltered.asStateFlow()
-
     private val _currentPage = MutableStateFlow(0)
     val currentPage = _currentPage.asStateFlow()
 
     private val _totalPages = MutableStateFlow(1)
     val totalPages = _totalPages.asStateFlow()
 
-    val mode: Flow<LibraryMode> = _selectedStatus.map {
-        if (it == LibraryItemStatus.NONE) LibraryMode.QUERY else LibraryMode.LIST
-    }
+    private val _mode = MutableStateFlow(LibraryMode.QUERY)
+    val mode = _mode.asStateFlow()
+
+    private val _selectedItem = MutableStateFlow<LibraryItem?>(null)
+    val selectedItem = _selectedItem.asStateFlow()
+
+    private val _currentItemsList = MutableStateFlow<List<LibraryItem>>(emptyList())
+    private val _currentItemIndex = MutableStateFlow(0)
+
+    val canNavigateNext = combine(_currentItemsList, _currentItemIndex) { items, index ->
+        index < items.size - 1
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = false
+    )
+
+    val canNavigatePrevious = _currentItemIndex.map { it > 0 }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = false
+    )
 
     private val itemMap = _currentPlugin.flatMapLatest { plugin ->
         if (plugin == null) flowOf(emptyMap())
@@ -67,52 +88,146 @@ class LibraryViewModel : ViewModel() {
             .filter { it.status == LibraryItemStatus.NONE }
     }.cachedIn(viewModelScope)
 
-    val queryItems: Flow<PagingData<LibraryItem>> = _isQueryFiltered.flatMapLatest { filtered ->
-        if (filtered) _filteredQueryItems else _baseQueryItems
+    val queryItems: Flow<PagingData<LibraryItem>> = mode.flatMapLatest { mode ->
+        if (mode == LibraryMode.QUERY_NEW_ONLY) _filteredQueryItems else _baseQueryItems
     }
 
-    val listItems: Flow<PagingData<LibraryItem>> = combine(_selectedStatus, itemMap, _currentPage) { status, items, page ->
-        if (status == LibraryItemStatus.NONE) {
-            PagingData.empty()
-        } else {
-            val filtered = items.values
-                .filter { it.status == status }
-                .sortedBy { it.index }
+    val listItems: Flow<PagingData<LibraryItem>> = combine(
+        itemMap,
+        _selectedStatus,
+        _mode,
+        _currentPage
+    ) { items, status, mode, page ->
+        val filtered = filterListMode(items, status, mode)
 
-            _totalPages.value =
-                ((filtered.size + LibraryConstants.PAGE_SIZE - 1) / LibraryConstants.PAGE_SIZE)
+        _totalPages.value =
+            ((filtered.size + LibraryConstants.PAGE_SIZE - 1) / LibraryConstants.PAGE_SIZE)
                 .coerceAtLeast(1)
 
-            val pagedItems = filtered
-                .drop(page * LibraryConstants.PAGE_SIZE)
-                .take(LibraryConstants.PAGE_SIZE)
+        val pagedItems = filtered
+            .drop(page * LibraryConstants.PAGE_SIZE)
+            .take(LibraryConstants.PAGE_SIZE)
 
-            PagingData.from(pagedItems)
-        }
+        PagingData.from(pagedItems)
     }.cachedIn(viewModelScope)
-
 
     fun setPlugin(plugin: MediaPlugin?) {
         if (_currentPlugin.value?.metadata?.id == plugin?.metadata?.id) return
         _currentPlugin.value = plugin
         _selectedStatus.value = LibraryItemStatus.NONE
-        _isQueryFiltered.value = false
+        _mode.value = LibraryMode.QUERY
         _currentPage.value = 0
     }
 
     fun setStatus(status: LibraryItemStatus) {
-        if (_selectedStatus.value == LibraryItemStatus.NONE && status == LibraryItemStatus.NONE) {
-            _isQueryFiltered.value = !_isQueryFiltered.value
-        } else {
-            _selectedStatus.value = status
-            if (status != LibraryItemStatus.NONE) {
-                _isQueryFiltered.value = false
+        _selectedStatus.value = status
+        _mode.value =
+            if (_selectedStatus.value == LibraryItemStatus.NONE) {
+                if (status == LibraryItemStatus.NONE) {
+                    if (_mode.value == LibraryMode.QUERY) LibraryMode.QUERY_NEW_ONLY
+                    else LibraryMode.QUERY
+                } else {
+                    LibraryMode.QUERY
+                }
+            } else {
+                LibraryMode.LIST
             }
+        _currentPage.value = 0
+    }
+
+    fun setSavedMode() {
+        _selectedStatus.value = LibraryItemStatus.NONE
+        _mode.value = LibraryMode.SAVED
+        _currentPage.value = 0
+    }
+
+    fun toggleSavedSortOrder() {
+        _mode.value = when (_mode.value) {
+            LibraryMode.SAVED -> LibraryMode.SAVED_BY_DATE
+            LibraryMode.SAVED_BY_DATE -> LibraryMode.SAVED
+            else -> LibraryMode.SAVED
         }
         _currentPage.value = 0
     }
 
+    fun toggleEditMode() {
+        _mode.value =
+            if (_mode.value == LibraryMode.LIST) LibraryMode.EDIT
+            else LibraryMode.LIST
+    }
+
     fun setPage(page: Int) {
         _currentPage.value = page
+    }
+
+    fun selectItem(item: LibraryItem, itemsList: List<LibraryItem>) {
+        _selectedItem.value = item
+        _currentItemsList.value = itemsList
+        _currentItemIndex.value = itemsList.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
+    }
+
+    fun clearSelectedItem() {
+        _selectedItem.value = null
+        _currentItemsList.value = emptyList()
+        _currentItemIndex.value = 0
+    }
+
+    fun navigateNext() {
+        val items = _currentItemsList.value
+        val currentIndex = _currentItemIndex.value
+        if (currentIndex < items.size - 1) {
+            _currentItemIndex.value = currentIndex + 1
+            _selectedItem.value = items[currentIndex + 1]
+        }
+    }
+
+    fun navigatePrevious() {
+        val currentIndex = _currentItemIndex.value
+        val items = _currentItemsList.value
+        if (currentIndex > 0) {
+            _currentItemIndex.value = currentIndex - 1
+            _selectedItem.value = items[currentIndex - 1]
+        }
+    }
+
+    fun toggleStatus(status: LibraryItemStatus) {
+        val item = _selectedItem.value ?: return
+        val plugin = _currentPlugin.value ?: return
+
+        viewModelScope.launch {
+            val newStatus = if (item.status == status) LibraryItemStatus.NONE else status
+            LibraryManager.setStatus(plugin, item, newStatus)
+            _selectedItem.value = item.copy(status = newStatus)
+        }
+    }
+
+    fun toggleSaved() {
+        val item = _selectedItem.value ?: return
+        val plugin = _currentPlugin.value ?: return
+
+        viewModelScope.launch {
+            val newSaved = !item.saved
+            val newItem = item.copy(
+                saved = newSaved,
+                lastAccessed = System.currentTimeMillis()
+            )
+            LibraryManager.addItem(plugin, newItem)
+            _selectedItem.value = newItem
+        }
+    }
+
+    private fun filterListMode(items: Map<String, LibraryItem>, status: LibraryItemStatus, mode: LibraryMode) = when (mode) {
+        LibraryMode.SAVED -> {
+                items.values.filter { it.saved }.sortedBy { it.index }
+        }
+        LibraryMode.SAVED_BY_DATE -> {
+            items.values.filter { it.saved }.sortedByDescending { it.lastAccessed }
+        }
+        LibraryMode.LIST, LibraryMode.EDIT -> {
+            items.values.filter { it.status == status }.sortedBy { it.index }
+        }
+        else -> {
+            items.values.toList()
+        }
     }
 }

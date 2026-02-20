@@ -19,7 +19,7 @@ import com.example.plugin_common.plugin.MediaPlugin
 internal fun ListMode(
     viewModel: LibraryViewModel,
     plugin: MediaPlugin?,
-    onItemClick: (LibraryItem) -> Unit
+    onItemClick: (LibraryItem, List<LibraryItem>) -> Unit
 ) {
     val items = viewModel.listItems.collectAsLazyPagingItems()
 
@@ -41,7 +41,11 @@ internal fun ListMode(
                     LibraryItemCell(
                         item = item,
                         plugin = plugin,
-                        onClick = { onItemClick(item) }
+                        onClick = {
+                            // Collect all items from the paging data
+                            val allItems = (0 until items.itemCount).mapNotNull { items[it] }
+                            onItemClick(item, allItems)
+                        }
                     )
                 }
             }

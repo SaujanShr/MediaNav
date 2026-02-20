@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
@@ -72,11 +73,22 @@ fun MediaScreen(viewModel: ItemViewModel) {
                                 }
                             )
                         }
-                        IconButton(onClick = { viewModel.toggleStatus(LibraryItemStatus.SAVED) }) {
+                        IconButton(onClick = { viewModel.toggleStatus(LibraryItemStatus.LIKED) }) {
                             Icon(
                                 imageVector = Icons.Default.Favorite,
                                 contentDescription = "Liked",
-                                tint = if (item.status == LibraryItemStatus.SAVED) {
+                                tint = if (item.status == LibraryItemStatus.LIKED) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                        IconButton(onClick = { viewModel.toggleSaved() }) {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = null,
+                                tint = if (item.saved) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant

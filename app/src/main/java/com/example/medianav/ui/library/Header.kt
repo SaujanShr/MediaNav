@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Visibility
@@ -25,8 +27,8 @@ import com.example.plugin_common.library.LibraryItemStatus
 @Composable
 internal fun LibraryHeader(libraryViewModel: LibraryViewModel) {
     val selectedStatus by libraryViewModel.selectedStatus.collectAsState()
-    val isFiltered by libraryViewModel.isQueryFiltered.collectAsState()
     val currentPlugin by libraryViewModel.currentPlugin.collectAsState()
+    val mode by libraryViewModel.mode.collectAsState()
 
     Row(
         modifier = Modifier
@@ -35,19 +37,28 @@ internal fun LibraryHeader(libraryViewModel: LibraryViewModel) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val title = when (selectedStatus) {
-            LibraryItemStatus.NONE -> currentPlugin?.metadata?.name ?: "Library"
-            LibraryItemStatus.SAVED -> "Saved"
-            LibraryItemStatus.VIEWED -> "Viewed"
+        val title = when {
+            mode == LibraryMode.SAVED || mode == LibraryMode.SAVED_BY_DATE -> "Saved"
+            selectedStatus == LibraryItemStatus.LIKED -> "Liked"
+            selectedStatus == LibraryItemStatus.VIEWED -> "Viewed"
+            else -> currentPlugin?.metadata?.name ?: "Library"
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (mode == LibraryMode.EDIT) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Mode",
+                    modifier = Modifier.padding(end = 8.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
-            if (selectedStatus == LibraryItemStatus.NONE && isFiltered) {
+            if (mode == LibraryMode.QUERY_NEW_ONLY) {
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filtered",
@@ -58,18 +69,24 @@ internal fun LibraryHeader(libraryViewModel: LibraryViewModel) {
         }
 
         StatusSelector(
+            libraryViewModel = libraryViewModel,
             selectedStatus = selectedStatus,
-            isFiltered = isFiltered,
-            onStatusSelected = { libraryViewModel.setStatus(it) }
+            mode = mode,
+            onStatusSelected = { libraryViewModel.setStatus(it) },
+            onSavedClick = { libraryViewModel.setSavedMode() },
+            onSavedDoubleClick = { libraryViewModel.toggleSavedSortOrder() }
         )
     }
 }
 
 @Composable
 private fun StatusSelector(
+    libraryViewModel: LibraryViewModel,
     selectedStatus: LibraryItemStatus,
-    isFiltered: Boolean,
-    onStatusSelected: (LibraryItemStatus) -> Unit
+    mode: LibraryMode,
+    onStatusSelected: (LibraryItemStatus) -> Unit,
+    onSavedClick: () -> Unit,
+    onSavedDoubleClick: () -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -77,19 +94,27 @@ private fun StatusSelector(
     ) {
         LibraryItemStatus.entries.forEach { status ->
             val icon = when (status) {
-                LibraryItemStatus.SAVED -> Icons.Default.Favorite
+                LibraryItemStatus.LIKED -> Icons.Default.Favorite
                 LibraryItemStatus.VIEWED -> Icons.Default.Visibility
                 LibraryItemStatus.NONE -> Icons.AutoMirrored.Filled.ViewList
             }
 
+            val isSelected = selectedStatus == status && mode != LibraryMode.SAVED && mode != LibraryMode.SAVED_BY_DATE
+
             IconButton(
-                onClick = { onStatusSelected(status) }
+                onClick = {
+                    if (isSelected && status != LibraryItemStatus.NONE) {
+                        libraryViewModel.toggleEditMode()
+                    } else {
+                        onStatusSelected(status)
+                    }
+                }
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
-                    tint = if (selectedStatus == status) {
-                        if (status == LibraryItemStatus.NONE && isFiltered) {
+                    contentDescription = status.name,
+                    tint = if (isSelected) {
+                        if (mode == LibraryMode.QUERY_NEW_ONLY) {
                             MaterialTheme.colorScheme.tertiary
                         } else {
                             MaterialTheme.colorScheme.primary
@@ -98,6 +123,40 @@ private fun StatusSelector(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
+            }
+        }
+
+        when (mode) {
+            LibraryMode.QUERY, LibraryMode.QUERY_NEW_ONLY -> {
+                IconButton(onClick = { /* do nothing */ }) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filter",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            LibraryMode.LIST, LibraryMode.EDIT, LibraryMode.SAVED, LibraryMode.SAVED_BY_DATE -> {
+                val isSavedMode = mode == LibraryMode.SAVED || mode == LibraryMode.SAVED_BY_DATE
+                IconButton(
+                    onClick = {
+                        if (isSavedMode) {
+                            onSavedDoubleClick()
+                        } else {
+                            onSavedClick()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = "Saved",
+                        tint = if (isSavedMode) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
             }
         }
     }
