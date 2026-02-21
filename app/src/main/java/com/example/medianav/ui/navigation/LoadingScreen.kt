@@ -1,4 +1,4 @@
-package com.example.medianav.ui.shared
+package com.example.medianav.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

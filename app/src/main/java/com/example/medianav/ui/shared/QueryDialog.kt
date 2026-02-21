@@ -19,11 +19,10 @@ import com.example.plugin_common.library.schema.QuerySchema
 @Composable
 fun LibraryQueryDialog(
     schema: QuerySchema,
-    initialQuery: LibraryQuery = LibraryQuery(),
     onDismiss: () -> Unit,
     onApply: (LibraryQuery) -> Unit
 ) {
-    var queryState by remember { mutableStateOf(initialQuery) }
+    var queryState by remember { mutableStateOf(LibraryQuery()) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

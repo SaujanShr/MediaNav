@@ -9,8 +9,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.medianav.ui.library.list.LibraryHeader
-import com.example.medianav.ui.library.list.LibraryMode
+import com.example.medianav.ui.library.list.header.LibraryHeader
+import com.example.medianav.ui.library.mode.LibraryMode
 import com.example.medianav.ui.library.media.MediaDetailScreen
 import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.plugin_common.library.LibraryItem

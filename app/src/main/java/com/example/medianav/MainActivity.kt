@@ -20,7 +20,7 @@ import com.example.medianav.config.ConfigManager
 import com.example.medianav.library.LibraryManager
 import com.example.medianav.plugin.PluginManager
 import com.example.medianav.ui.navigation.MediaNavApplication
-import com.example.medianav.ui.shared.LoadingScreen
+import com.example.medianav.ui.navigation.LoadingScreen
 import com.example.medianav.ui.theme.MediaNavTheme
 import kotlinx.coroutines.launch
 
