@@ -55,7 +55,9 @@ internal class AnimePagingSource(
             val itemsAfter = totalItems - itemsBefore - items.size
 
             LoadResult.Page(
-                data = items.map { it.toLibraryItem() },
+                data = items.mapIndexed { index, anime ->
+                    anime.toLibraryItem().copy(index = itemsBefore + index)
+                },
                 prevKey = if (page <= 1) null else page - 1,
                 nextKey = if (response.pagination.hasNextPage) page + 1 else null,
                 itemsBefore = itemsBefore.coerceAtLeast(0),

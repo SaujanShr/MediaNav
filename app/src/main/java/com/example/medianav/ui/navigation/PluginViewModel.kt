@@ -8,9 +8,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 
 class PluginViewModel : ViewModel() {
-    private val _errors = MutableSharedFlow<String>()
-    val errors = _errors.asSharedFlow()
-
     private val _currentPlugin = MutableStateFlow<MediaPlugin?>(null)
     val currentPlugin: StateFlow<MediaPlugin?> get() = _currentPlugin
 
@@ -20,12 +17,19 @@ class PluginViewModel : ViewModel() {
     val enabledPlugins = PluginManager.plugins
         .flatMapLatest { pluginList ->
             if (pluginList.isEmpty()) flowOf(emptyList())
-            else combine(pluginList.map { PluginManager.isEnabled(it) }) { states ->
-                pluginList.zip(states.toList()) { plugin, enabled -> plugin.takeIf { enabled } }
-                    .filterNotNull()
+            else combine(pluginList.map {
+                PluginManager.isEnabled(it)
+            }) { states ->
+                pluginList.zip(states.toList()) { plugin, enabled ->
+                    plugin.takeIf { enabled }
+                }.filterNotNull()
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            emptyList()
+        )
 
     fun selectPlugin(plugin: MediaPlugin) {
         _currentPlugin.value = plugin

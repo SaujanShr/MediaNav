@@ -1,8 +1,10 @@
 package com.example.medianav.ui.home
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,9 +32,16 @@ import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
 import com.example.plugin_common.plugin.PluginCategory
 
-
 private val tabs = listOf("All") + PluginCategory.entries.map {
     it.value.toTitleCase()
+}
+
+private fun getFilteredPlugins(plugins: List<MediaPlugin>, selectedIndex: Int): List<MediaPlugin> {
+    if (selectedIndex == 0) return plugins
+    val category = PluginCategory.entries.getOrNull(selectedIndex - 1)
+        ?: return emptyList()
+
+    return plugins.filter { it.metadata.category == category }
 }
 
 @Composable
@@ -46,7 +55,7 @@ internal fun PluginTab(
         derivedStateOf { getFilteredPlugins(enabledPlugins, selectedTabIndex) }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column {
         PluginTabRow(
             selectedIndex = selectedTabIndex,
             onTabSelected = { selectedTabIndex = it }
@@ -107,18 +116,12 @@ private fun PluginTabContent(
         }
 
         if (plugins.isEmpty()) {
-            item { NoPlugin(
-                "No plugins available",
-                "Add plugins to see them listed here"
-            ) }
+            item {
+                NoPlugin(
+                    "No plugins available",
+                    "Add plugins to see them listed here"
+                )
+            }
         }
     }
-}
-
-private fun getFilteredPlugins(plugins: List<MediaPlugin>, selectedIndex: Int): List<MediaPlugin> {
-    if (selectedIndex == 0) return plugins
-    val category = PluginCategory.entries.getOrNull(selectedIndex - 1)
-        ?: return emptyList()
-
-    return plugins.filter { it.metadata.category == category }
 }

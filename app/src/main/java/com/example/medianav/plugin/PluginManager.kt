@@ -30,8 +30,13 @@ object PluginManager {
             restorePlugins()
 
             val animePlugin = AnimePlugin()
+            val dataDir = PluginStorage.pluginDataDir(appContext, animePlugin.metadata.id)
+            animePlugin.resources.attach(dataDir, appContext.resources)
             setPluginInCache(animePlugin)
             setEnabled(animePlugin, true)
+//            _plugins.update { current ->
+//                current + ("1" to animePlugin)
+//            }
         }
     }
 

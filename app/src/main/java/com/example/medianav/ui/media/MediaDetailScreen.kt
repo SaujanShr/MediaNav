@@ -1,4 +1,4 @@
-package com.example.medianav.ui.library
+package com.example.medianav.ui.media
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -42,7 +42,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.example.medianav.ui.library.LibraryViewModel
+import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
+import com.example.plugin_common.plugin.MediaPlugin
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -53,7 +56,7 @@ fun MediaDetailScreen(
     viewModel: LibraryViewModel,
     onBack: () -> Unit
 ) {
-    val selectedItem by viewModel.selectedItem.collectAsState()
+    val currentItem by viewModel.currentItem.collectAsState()
     val plugin by viewModel.currentPlugin.collectAsState()
     val canNavigateNext by viewModel.canNavigateNext.collectAsState()
     val canNavigatePrevious by viewModel.canNavigatePrevious.collectAsState()
@@ -67,7 +70,7 @@ fun MediaDetailScreen(
     val swipeThreshold = 100f
 
     // Reset animation when item changes
-    LaunchedEffect(selectedItem?.id) {
+    LaunchedEffect(currentItem?.id) {
         offsetX.snapTo(0f)
         dragOffset = 0f
     }
@@ -170,7 +173,7 @@ fun MediaDetailScreen(
                 }
         ) {
             MediaDetailContent(
-                item = selectedItem,
+                item = currentItem,
                 plugin = plugin,
                 viewModel = viewModel,
                 offsetX = offsetX
@@ -181,8 +184,8 @@ fun MediaDetailScreen(
 
 @Composable
 private fun MediaDetailContent(
-    item: com.example.plugin_common.library.LibraryItem?,
-    plugin: com.example.plugin_common.plugin.MediaPlugin?,
+    item: LibraryItem?,
+    plugin: MediaPlugin?,
     viewModel: LibraryViewModel,
     offsetX: Animatable<Float, AnimationVector1D>
 ) {

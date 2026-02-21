@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
+import com.example.plugin_common.util.conditionally
 
 @Composable
 fun Plugin(
@@ -34,14 +35,14 @@ fun Plugin(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .let {
-                if (onClick != null) {
-                    it.clickable { onClick(plugin) }
-                } else it
-            },
+            .conditionally(onClick != null) {
+                it
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onClick?.invoke(plugin) }
+            }
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         PluginContent(plugin)
         content?.invoke()
@@ -62,7 +63,7 @@ private fun PluginContent(plugin: MediaPlugin) {
             )
             Text(
                 text = plugin.metadata.category.value.toTitleCase(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

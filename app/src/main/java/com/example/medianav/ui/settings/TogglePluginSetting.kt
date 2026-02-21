@@ -58,11 +58,6 @@ private fun ToggleInstalledPluginDropdown(
             items(plugins) { plugin ->
                 val enabled = enabledPlugins.contains(plugin)
                 PluginItem(settingsViewModel, pluginViewModel, plugin, enabled)
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                )
             }
 
             if (plugins.isEmpty()) {

@@ -26,6 +26,7 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
     pluginViewModel: PluginViewModel
 ) {
+
     val errorMessages = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(settingsViewModel) {

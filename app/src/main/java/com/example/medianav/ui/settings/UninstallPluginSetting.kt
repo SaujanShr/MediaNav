@@ -40,8 +40,6 @@ private fun UninstallPluginDropdown(
     settingsViewModel: SettingsViewModel,
     pluginViewModel: PluginViewModel
 ) {
-    val context = LocalContext.current
-
     val plugins by pluginViewModel.plugins.collectAsState(initial = emptyList())
     var pluginToConfirm by remember { mutableStateOf<MediaPlugin?>(null) }
 
@@ -61,11 +59,6 @@ private fun UninstallPluginDropdown(
                 Plugin(
                     plugin,
                     onClick = { pluginToConfirm = plugin }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
                 )
             }
 

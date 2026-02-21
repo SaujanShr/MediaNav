@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.plugin_common.util.toTitleCase
 import com.example.plugin_common.plugin.MediaPlugin
 
 @Composable
@@ -55,8 +54,7 @@ internal fun CurrentPluginHeader(pluginViewModel: PluginViewModel) {
 private fun PluginSelectedContent(plugin: MediaPlugin) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        horizontalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         PluginIcon(plugin)
 
@@ -65,16 +63,11 @@ private fun PluginSelectedContent(plugin: MediaPlugin) {
                 text = plugin.metadata.name,
                 style = MaterialTheme.typography.titleMedium
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = plugin.metadata.category.name.toTitleCase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = plugin.metadata.category.value,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
@@ -87,7 +80,7 @@ private fun NoPluginSelectedContent() {
     ) {
         NoPluginIcon()
 
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = "Select a plugin",
                 style = MaterialTheme.typography.titleMedium,
@@ -132,8 +125,8 @@ private fun NoPluginIcon() {
         Icon(
             imageVector = Icons.Default.Extension,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(28.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
     }
 }

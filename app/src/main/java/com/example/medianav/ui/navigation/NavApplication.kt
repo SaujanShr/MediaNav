@@ -1,5 +1,6 @@
 package com.example.medianav.ui.navigation
 
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -12,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.medianav.ui.home.HomeScreen
 import com.example.medianav.ui.library.LibraryScreen
 import com.example.medianav.ui.settings.SettingsScreen
+import com.example.medianav.ui.shared.LockScreenOrientation
 
 
 @Composable
@@ -19,6 +21,14 @@ fun NavApplication() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+
+    // Lock orientation to portrait for all screens except Media
+    val shouldLockOrientation = currentDestination?.route != NavDestination.Media.route
+    if (shouldLockOrientation) {
+        LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+    } else {
+        LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+    }
 
     Scaffold(
         bottomBar = {
