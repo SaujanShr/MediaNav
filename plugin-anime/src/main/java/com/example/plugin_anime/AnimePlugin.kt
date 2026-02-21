@@ -57,14 +57,6 @@ class AnimePlugin : MediaPlugin {
     private val genreCache = runBlocking { service.genreCache() }
     private val cacheMutex = Mutex()
 
-    private val initialQuery = LibraryQuery(
-        sortFields = mapOf(
-            JikanConstants.Query.ORDER_BY to SortExpression(
-                AnimeSearchQueryOrderBy.SCORE.value,
-                SortDirection.DESC
-            ))
-    )
-
     private val thumbnailPlayer = ThumbnailPlayer(75f / 106f)
     private val previewPlayer = PreviewPlayer(75f / 106f)
 
@@ -95,13 +87,16 @@ class AnimePlugin : MediaPlugin {
             put(JikanConstants.Query.ORDER_BY, SortFieldSchema(
                 supported = AnimeSearchQueryOrderBy.entries.map { it.value }.toSet(),
                 ascending = true,
-                descending = true
+                descending = true,
+                defaultSort = AnimeSearchQueryOrderBy.SCORE.value,
+                defaultDirection = SortDirection.DESC
             ))
         }
     )
 
     override fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>> {
-        val query = if (query.isEmpty()) initialQuery else query
+        val query = if (query.isEmpty()) querySchema.defaultQuery() else query
+
         return createLibraryPager(
             pageSize = 10,
             pagingSourceFactory = { initialPage, totalCount, totalPages, currentPage ->
@@ -122,10 +117,7 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun Thumbnail(item: LibraryItem, onClick: () -> Unit) {
-        val anime = getAnime(item)
-        anime?.let {
-            thumbnailPlayer.Remote(it.images.jpg.largeImageUrl!!, onClick)
-        }
+        thumbnailPlayer.Remote(item.thumbnailUrl, onClick)
     }
 
     @Composable

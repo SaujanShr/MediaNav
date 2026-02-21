@@ -8,7 +8,9 @@ data class SortFieldSchema(
     val supported: Set<String> = emptySet(),
     val ascending: Boolean = false,
     val descending: Boolean = false,
-    val required: Boolean = false
+    val required: Boolean = false,
+    val defaultSort: String? = null,
+    val defaultDirection: SortDirection? = null
 ) : QueryFieldSchema {
     fun validate(value: SortExpression?): QueryValidationResult =
         if (value == null) validateRequired

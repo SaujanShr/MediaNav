@@ -8,7 +8,9 @@ data class NumberFieldSchema(
     val float: Boolean = false,
     val range: Boolean = false,
     val requiredFrom: Boolean = false,
-    val requiredTo: Boolean = false
+    val requiredTo: Boolean = false,
+    val defaultFrom: Float? = null,
+    val defaultTo: Float? = null
 ): QueryFieldSchema {
     fun validate(value: Pair<Float?, Float?>?): QueryValidationResult {
         val (from, to) = value ?: (null to null)

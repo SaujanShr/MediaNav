@@ -9,7 +9,9 @@ data class FilterFieldSchema(
     val include: Boolean = false,
     val exclude: Boolean = false,
     val requiredInclude: Boolean = false,
-    val requiredExclude: Boolean = false
+    val requiredExclude: Boolean = false,
+    val defaultInclude: Set<String>? = null,
+    val defaultExclude: Set<String>? = null
 ) : QueryFieldSchema {
     fun validate(value: FilterExpression?): QueryValidationResult =
     if (value == null) validateRequired

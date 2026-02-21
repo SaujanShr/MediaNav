@@ -3,10 +3,10 @@ package com.example.plugin_common.library.schema.field
 import com.example.plugin_common.library.schema.QueryValidationResult
 
 data class SearchFieldSchema(
-    val placeholder: String = "",
     val required: Boolean = false,
     val minLength: Int? = null,
-    val maxLength: Int? = null
+    val maxLength: Int? = null,
+    val default: String? = null
 ): QueryFieldSchema {
     fun validate(value: String?): QueryValidationResult =
         if (value.isNullOrBlank()) validateRequired

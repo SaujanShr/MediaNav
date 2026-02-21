@@ -17,7 +17,6 @@ fun LockScreenOrientation(orientation: Int = ActivityInfo.SCREEN_ORIENTATION_POR
         val activity = context as? Activity ?: return@DisposableEffect onDispose {}
         activity.requestedOrientation = orientation
         onDispose {
-            // Restore to unspecified to allow rotation
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }

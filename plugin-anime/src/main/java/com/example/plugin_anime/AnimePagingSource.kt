@@ -56,7 +56,7 @@ internal class AnimePagingSource(
 
             LoadResult.Page(
                 data = items.mapIndexed { index, anime ->
-                    anime.toLibraryItem().copy(index = itemsBefore + index)
+                    anime.toLibraryItem(itemsBefore + index)
                 },
                 prevKey = if (page <= 1) null else page - 1,
                 nextKey = if (response.pagination.hasNextPage) page + 1 else null,

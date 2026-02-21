@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 interface ListStateProvider {
@@ -92,41 +93,42 @@ class ListState: ListStateProvider {
         )
     }
 
-    private val baseQueryItems by lazy {
-        combine(
-            _currentPlugin.flatMapLatest { plugin ->
-                plugin?.getLibraryItems(LibraryQuery()) ?: flowOf(PagingData.Companion.empty())
-            },
-            itemMap
-        ) { pagingData, items ->
-            pagingData.map { remoteItem ->
-                // Merge with cached item but preserve the query index from remote
-                val cachedItem = items[remoteItem.id]
-                if (cachedItem != null) {
-                    cachedItem.copy(index = remoteItem.index)
-                } else {
-                    remoteItem
-                }
-            }
-        }.cachedIn(scope)
-    }
-    private val filteredQueryItems by lazy {
-        combine(baseQueryItems, itemMap) { pagingData, items ->
-            pagingData
-                .map { remoteItem -> items[remoteItem.id] ?: remoteItem }
-                .filter { it.status == LibraryItemStatus.NONE }
-        }.cachedIn(scope)
-    }
-    override val queryItems by lazy {
-        _mode.flatMapLatest { mode ->
+    override val queryItems: Flow<PagingData<LibraryItem>> by lazy {
+        combine(_currentPlugin, _mode) { plugin, mode ->
+            Pair(plugin, mode)
+        }.flatMapLatest { (plugin, mode) ->
             when (mode) {
                 is LibraryMode.Query -> {
-                    if (mode.mode == QueryMode.NEW_ONLY) filteredQueryItems
-                    else baseQueryItems
+                    if (plugin == null) {
+                        flowOf(PagingData.empty())
+                    } else {
+                        plugin.getLibraryItems(LibraryQuery())
+                            .map { pagingData ->
+                                // Snapshot the current items map
+                                val items = itemMap.value
+
+                                // Apply transformations
+                                var result = pagingData.map { remoteItem ->
+                                    // Merge with cached item but preserve the query index from remote
+                                    val cachedItem = items[remoteItem.id]
+                                    if (cachedItem != null) {
+                                        cachedItem.copy(index = remoteItem.index)
+                                    } else {
+                                        remoteItem
+                                    }
+                                }
+
+                                if (mode.mode == QueryMode.NEW_ONLY) {
+                                    result = result.filter { it.status == LibraryItemStatus.NONE }
+                                }
+
+                                result
+                            }
+                    }
                 }
                 is LibraryMode.List -> flowOf(PagingData.empty())
             }
-        }
+        }.cachedIn(scope)
     }
 
     private fun itemsForMode(

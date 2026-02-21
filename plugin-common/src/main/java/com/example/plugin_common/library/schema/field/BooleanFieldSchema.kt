@@ -1,3 +1,5 @@
 package com.example.plugin_common.library.schema.field
 
-class BooleanFieldSchema: QueryFieldSchema
+data class BooleanFieldSchema(
+    val default: Boolean? = null
+): QueryFieldSchema

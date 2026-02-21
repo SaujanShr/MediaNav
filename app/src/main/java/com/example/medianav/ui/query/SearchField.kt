@@ -29,7 +29,7 @@ fun SearchField(
                 val filtered = input.replace(Regex("[\\t\\n\\r]"), "")
                 onValueChange(filtered)
             },
-            placeholder = { Text(schema.placeholder.ifEmpty { "Enter text" }) },
+            placeholder = { Text("Enter text") },
             modifier = Modifier.fillMaxWidth()
         )
     }

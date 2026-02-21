@@ -9,13 +9,13 @@ data class DateFieldSchema(
     val max: LocalDate? = null,
     val range: Boolean = false,
     val requiredFrom: Boolean = false,
-    val requiredTo: Boolean = false
+    val requiredTo: Boolean = false,
+    val defaultFrom: LocalDate? = null,
+    val defaultTo: LocalDate? = null
 ): QueryFieldSchema {
     private val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     private val minimumDate = min?.format(formatter)
     private val maximumDate = max?.format(formatter)
-
-
 
     fun validate(value: Pair<LocalDate?, LocalDate?>?): QueryValidationResult {
         val (from, to) = value ?: (null to null)
