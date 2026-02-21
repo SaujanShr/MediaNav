@@ -11,7 +11,6 @@ import com.example.plugin_common.library.LibraryItemStatus
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.plugin.MediaPlugin
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +35,6 @@ interface ListStateProvider {
     fun setPage(page: Int)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ListState: ListStateProvider {
     private lateinit var scope: CoroutineScope
 

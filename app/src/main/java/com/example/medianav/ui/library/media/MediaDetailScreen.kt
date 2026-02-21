@@ -1,4 +1,4 @@
-package com.example.medianav.ui.media
+package com.example.medianav.ui.library.media
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D

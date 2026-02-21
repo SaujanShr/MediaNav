@@ -7,10 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ExtensionOff
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.plugin_common.plugin.MediaPlugin
@@ -19,7 +17,7 @@ import com.example.medianav.ui.shared.NoPlugin
 import com.example.medianav.ui.shared.Plugin
 
 @Composable
-internal fun UninstallPlugin(
+internal fun UninstallPluginSetting(
     settingsViewModel: SettingsViewModel,
     pluginViewModel: PluginViewModel
 ) {

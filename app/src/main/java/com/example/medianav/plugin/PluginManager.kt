@@ -16,11 +16,6 @@ object PluginManager {
     private val initMutex = Mutex()
     private var initialized = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    
-    private val _plugins = MutableStateFlow<Map<String, MediaPlugin>>(emptyMap())
-    val plugins: StateFlow<List<MediaPlugin>> = _plugins
-        .map { it.values.toList() }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     suspend fun initialize(context: Context) {
         initMutex.withLock {
@@ -34,11 +29,13 @@ object PluginManager {
             animePlugin.resources.attach(dataDir, appContext.resources)
             setPluginInCache(animePlugin)
             setEnabled(animePlugin, true)
-//            _plugins.update { current ->
-//                current + ("1" to animePlugin)
-//            }
         }
     }
+
+    private val _plugins = MutableStateFlow<Map<String, MediaPlugin>>(emptyMap())
+    val plugins: StateFlow<List<MediaPlugin>> = _plugins
+        .map { it.values.toList() }
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private suspend fun restorePlugins() {
         PluginStorage.getPluginIds(appContext).first().forEach { pluginId ->
@@ -68,19 +65,18 @@ object PluginManager {
         plugin
     }
 
-    private fun loadFile(path: String) = runCatching {
-        val file = File(path)
-        require(file.exists()) { "File $path does not exist" }
-        require(file.isFile) { "Path $path exists but is not a file" }
-        file
-    }
+    val enabledPluginIds: Flow<Set<String>> get() =
+        PluginStorage.getEnabledPluginIds(appContext)
 
     suspend fun setEnabled(plugin: MediaPlugin, enabled: Boolean) {
         PluginStorage.setEnabled(appContext, plugin, enabled)
     }
 
-    fun isEnabled(plugin: MediaPlugin): Flow<Boolean> {
-        return PluginStorage.getEnabledPluginIds(appContext).map { it.contains(plugin.metadata.id) }
+    private fun loadFile(path: String) = runCatching {
+        val file = File(path)
+        require(file.exists()) { "File $path does not exist" }
+        require(file.isFile) { "Path $path exists but is not a file" }
+        file
     }
 
     private fun setPluginInCache(plugin: MediaPlugin) = _plugins.update { current ->

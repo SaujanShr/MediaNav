@@ -37,6 +37,12 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+}
+
 dependencies {
     implementation(project(":plugin-common"))
     implementation(project(":plugin-anime"))

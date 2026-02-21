@@ -20,18 +20,23 @@ class SettingsViewModel : ViewModel() {
     private val _errors = MutableSharedFlow<String>()
     val errors = _errors.asSharedFlow()
 
+    private suspend fun emitError(message: String) {
+        _errors.emit(message)
+    }
+
     private val _expandedSetting = MutableStateFlow<SettingType?>(null)
     val expandedSetting: StateFlow<SettingType?> = _expandedSetting.asStateFlow()
-
-    val theme = ConfigManager.theme
-    val plugins = PluginManager.plugins
 
     fun toggleExpanded(setting: SettingType) {
         _expandedSetting.value = if (_expandedSetting.value == setting) null else setting
     }
 
-    fun isPluginEnabled(plugin: MediaPlugin): Flow<Boolean> {
-        return PluginManager.isEnabled(plugin)
+    val theme = ConfigManager.theme
+
+    fun setTheme(theme: Theme) {
+        viewModelScope.launch {
+            ConfigManager.setTheme(theme)
+        }
     }
 
     fun installPlugin(context: Context, uri: Uri?) {
@@ -64,16 +69,6 @@ class SettingsViewModel : ViewModel() {
         viewModelScope.launch {
             PluginManager.setEnabled(plugin, enabled)
         }
-    }
-
-    fun setTheme(theme: Theme) {
-        viewModelScope.launch {
-            ConfigManager.setTheme(theme)
-        }
-    }
-
-    private suspend fun emitError(message: String) {
-        _errors.emit(message)
     }
 
     private suspend fun copyUriToCache(context: Context, uri: Uri): File =

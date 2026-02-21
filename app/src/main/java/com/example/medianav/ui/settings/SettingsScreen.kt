@@ -19,14 +19,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.medianav.ui.shared.ErrorBanner
+import com.example.medianav.ui.shared.ErrorBannerList
 
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
     pluginViewModel: PluginViewModel
 ) {
-
     val errorMessages = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(settingsViewModel) {
@@ -46,26 +45,14 @@ fun SettingsScreen(
             SettingsSectionHeader("Plugins")
 
             InstallPluginSetting(settingsViewModel)
-            UninstallPlugin(settingsViewModel, pluginViewModel)
+            UninstallPluginSetting(settingsViewModel, pluginViewModel)
             TogglePluginSetting(settingsViewModel, pluginViewModel)
 
             SettingsSectionHeader("Display")
             ThemeSetting(settingsViewModel)
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            errorMessages.forEach { message ->
-                ErrorBanner(
-                    message = message,
-                    onDismiss = { errorMessages.remove(message) }
-                )
-            }
-        }
+        ErrorBannerList(errorMessages, Modifier.align(Alignment.TopCenter))
     }
 }
 
