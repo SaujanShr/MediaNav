@@ -7,13 +7,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.medianav.ui.library.list.LibraryGrid
 import com.example.medianav.ui.library.list.header.LibraryHeader
-import com.example.medianav.ui.library.mode.LibraryMode
 import com.example.medianav.ui.library.media.MediaDetailScreen
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.plugin_common.library.LibraryItem
 
 @Composable
 fun LibraryScreen(
@@ -23,6 +25,9 @@ fun LibraryScreen(
     val currentPlugin by pluginViewModel.currentPlugin.collectAsState()
     val currentItem by libraryViewModel.currentItem.collectAsState()
     val mode by libraryViewModel.mode.collectAsState()
+
+    var scrollIndex by remember { mutableIntStateOf(0) }
+    var scrollOffset by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(currentPlugin) {
         libraryViewModel.setPlugin(currentPlugin)
@@ -38,27 +43,20 @@ fun LibraryScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 LibraryHeader(libraryViewModel)
 
-                Box {
-                    when (mode) {
-                        is LibraryMode.Query -> QueryMode(
-                            viewModel = libraryViewModel,
-                            plugin = currentPlugin,
-                            onItemClick = { item, itemsList ->
-                                libraryViewModel.selectItem(item, itemsList)
-                            }
-                        )
-                        is LibraryMode.List -> Column(modifier = Modifier.fillMaxSize()) {
-                            ListMode(
-                                viewModel = libraryViewModel,
-                                plugin = currentPlugin,
-                                onItemClick = { item: LibraryItem, itemsList: List<LibraryItem> ->
-                                    libraryViewModel.selectItem(item, itemsList)
-                                }
-                            )
-                            PageBar(libraryViewModel)
-                        }
+                LibraryGrid(
+                    viewModel = libraryViewModel,
+                    plugin = currentPlugin,
+                    mode = mode,
+                    scrollIndex = scrollIndex,
+                    scrollOffset = scrollOffset,
+                    onScrollPositionChange = { index, offset ->
+                        scrollIndex = index
+                        scrollOffset = offset
+                    },
+                    onItemClick = { item, itemsList ->
+                        libraryViewModel.selectItem(item, itemsList)
                     }
-                }
+                )
             }
         }
     }

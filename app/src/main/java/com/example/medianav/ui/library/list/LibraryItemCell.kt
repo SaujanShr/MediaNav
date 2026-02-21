@@ -1,4 +1,4 @@
-package com.example.medianav.ui.library
+package com.example.medianav.ui.library.list
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box

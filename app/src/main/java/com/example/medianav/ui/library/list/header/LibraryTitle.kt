@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,7 +40,7 @@ internal fun LibraryTitle(
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(end = 8.dp)
     ) {
@@ -53,7 +53,7 @@ internal fun LibraryTitle(
             is LibraryMode.Query -> {
                 if (mode.type == QueryModeType.NEW_ONLY) {
                     Icon(
-                        imageVector = Icons.Default.FilterList,
+                        imageVector = Icons.Default.NewReleases,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -62,7 +62,7 @@ internal fun LibraryTitle(
             is LibraryMode.List -> {
                 if (mode.sort == ListModeSort.BY_ACCESS) {
                     Icon(
-                        imageVector = Icons.Default.Visibility,
+                        imageVector = Icons.Default.History,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )

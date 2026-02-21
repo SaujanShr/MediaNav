@@ -1,13 +1,14 @@
 package com.example.medianav.ui.library.list.header
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.example.medianav.ui.library.LibraryViewModel
 import com.example.medianav.ui.library.mode.LibraryMode
 import com.example.medianav.ui.library.mode.ListModeSort
@@ -24,21 +25,18 @@ internal fun StatusFilterButton(
     val icon = getIconForStatus(status)
     val isSelected = isStatusSelected(status, mode)
 
-    IconButton(
-        onClick = {
-            handleStatusButtonClick(libraryViewModel, status, mode, isSelected)
-        }
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = status.name,
-            tint = if (isSelected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        )
-    }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint =
+            if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .combinedClickable(
+                onClick = { handleStatusButtonClick(libraryViewModel, status, mode, isSelected) },
+                onLongClick = { handleStatusButtonLongPress(libraryViewModel, mode, isSelected) }
+            )
+    )
 }
 
 private fun getIconForStatus(status: LibraryItemStatus) = when (status) {
@@ -142,9 +140,25 @@ private fun cycleListModeOptions(
             LibraryMode.List(
                 status = mode.status,
                 sort = ListModeSort.BY_INDEX,
-                isEdit = true
+                isEdit = false
             )
     }
     libraryViewModel.setMode(newMode)
+}
+
+private fun handleStatusButtonLongPress(
+    libraryViewModel: LibraryViewModel,
+    mode: LibraryMode,
+    isSelected: Boolean
+) {
+    if (!isSelected || mode !is LibraryMode.List) return
+
+    libraryViewModel.setMode(
+        LibraryMode.List(
+            status = mode.status,
+            sort = ListModeSort.BY_INDEX,
+            isEdit = true
+        )
+    )
 }
 

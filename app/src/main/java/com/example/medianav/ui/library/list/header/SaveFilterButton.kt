@@ -1,77 +1,48 @@
+@file:JvmName("SaveFilterButtonKt")
+
 package com.example.medianav.ui.library.list.header
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.example.medianav.ui.library.LibraryViewModel
 import com.example.medianav.ui.library.mode.LibraryMode
 import com.example.medianav.ui.library.mode.ListModeSort
 import com.example.medianav.ui.library.mode.ListModeStatus
 
 @Composable
-internal fun OtherFilterButton(
+internal fun SaveFilterButton(
     libraryViewModel: LibraryViewModel,
     mode: LibraryMode
 ) {
-    when (mode) {
-        is LibraryMode.Query -> {
-            QueryFilterButton()
-        }
-        is LibraryMode.List -> {
-            SavedModeButton(
-                libraryViewModel = libraryViewModel,
-                mode = mode
-            )
-        }
-    }
-}
+    val isSelected = mode is LibraryMode.List && mode.status == ListModeStatus.SAVED
 
-@Composable
-private fun QueryFilterButton() {
-    IconButton(onClick = { /* TODO: Implement filter functionality */ }) {
-        Icon(
-            imageVector = Icons.Default.FilterList,
-            contentDescription = "Filter",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+    Icon(
+        imageVector = Icons.Default.Bookmark,
+        contentDescription = null,
+        tint =
+            if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.combinedClickable(
+            onClick = { handleSavedButtonClick(libraryViewModel, mode, isSelected) },
+            onLongClick = { handleSavedButtonLongPress(libraryViewModel, isSelected) }
         )
-    }
-}
-
-@Composable
-private fun SavedModeButton(
-    libraryViewModel: LibraryViewModel,
-    mode: LibraryMode.List
-) {
-    val isSelected = mode.status == ListModeStatus.SAVED
-
-    IconButton(
-        onClick = { handleSavedButtonClick(libraryViewModel, mode, isSelected) }
-    ) {
-        Icon(
-            imageVector = Icons.Default.Bookmark,
-            contentDescription = "Saved",
-            tint = if (isSelected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        )
-    }
+    )
 }
 
 private fun handleSavedButtonClick(
     libraryViewModel: LibraryViewModel,
-    mode: LibraryMode.List,
+    mode: LibraryMode,
     isSelected: Boolean
 ) {
     if (!isSelected) {
         switchToSavedMode(libraryViewModel)
     } else {
-        cycleSavedModeOptions(libraryViewModel, mode)
+        cycleSavedModeOptions(libraryViewModel, mode as LibraryMode.List)
     }
 }
 
@@ -106,9 +77,23 @@ private fun cycleSavedModeOptions(
             LibraryMode.List(
                 status = ListModeStatus.SAVED,
                 sort = ListModeSort.BY_INDEX,
-                isEdit = true
+                isEdit = false
             )
     }
     libraryViewModel.setMode(newMode)
 }
 
+private fun handleSavedButtonLongPress(
+    libraryViewModel: LibraryViewModel,
+    isSelected: Boolean
+) {
+    if (!isSelected) return
+
+    libraryViewModel.setMode(
+        LibraryMode.List(
+            status = ListModeStatus.SAVED,
+            sort = ListModeSort.BY_INDEX,
+            isEdit = true
+        )
+    )
+}

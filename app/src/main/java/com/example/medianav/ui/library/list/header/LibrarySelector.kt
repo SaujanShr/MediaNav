@@ -15,7 +15,7 @@ internal fun LibrarySelector(
     mode: LibraryMode
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         LibraryItemStatus.entries.forEach { status ->
@@ -25,7 +25,7 @@ internal fun LibrarySelector(
                 mode = mode
             )
         }
-        OtherFilterButton(
+        SaveFilterButton(
             libraryViewModel = libraryViewModel,
             mode = mode
         )

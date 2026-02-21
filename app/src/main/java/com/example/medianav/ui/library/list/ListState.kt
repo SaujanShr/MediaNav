@@ -14,6 +14,7 @@ import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.plugin.MediaPlugin
+import com.example.plugin_common.util.conditionally
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,13 +34,12 @@ interface ListStateProvider {
     val totalPages: StateFlow<Int>
     val queryItems: Flow<PagingData<LibraryItem>>
     val listItems: Flow<PagingData<LibraryItem>>
-    val queryScrollIndex: StateFlow<Int>
-    val queryScrollOffset: StateFlow<Int>
 
     fun setPlugin(plugin: MediaPlugin?)
     fun setMode(mode: LibraryMode)
     fun setPage(page: Int)
-    fun setQueryScrollPosition(index: Int, offset: Int)
+    fun toggleEditMode()
+    suspend fun moveItem(item: LibraryItem, fromIndex: Int, toIndex: Int)
 }
 
 class ListState: ListStateProvider {
@@ -72,16 +72,6 @@ class ListState: ListStateProvider {
         _currentPage.value = page
     }
 
-    private val _queryScrollIndex = MutableStateFlow(0)
-    override val queryScrollIndex = _queryScrollIndex.asStateFlow()
-
-    private val _queryScrollOffset = MutableStateFlow(0)
-    override val queryScrollOffset = _queryScrollOffset.asStateFlow()
-
-    override fun setQueryScrollPosition(index: Int, offset: Int) {
-        _queryScrollIndex.value = index
-        _queryScrollOffset.value = offset
-    }
 
     private val _totalPages: StateFlow<Int> by lazy {
         combine(itemMap, _mode) { items, mode ->
@@ -111,45 +101,33 @@ class ListState: ListStateProvider {
         )
     }
 
-    override val queryItems: Flow<PagingData<LibraryItem>> by lazy {
-        combine(_currentPlugin, _mode, ::Pair)
-            .flatMapLatest { (plugin, mode) -> getQueryItemsForMode(plugin, mode) }
-            .cachedIn(scope)
-    }
-
-    private fun filterNewOnly(pagingData: PagingData<LibraryItem>): PagingData<LibraryItem> {
-        return pagingData.filter { it.status == LibraryItemStatus.NONE }
-    }
-
-    private fun getQueryModeItems(
+    private fun queryItemsForMode(
         plugin: MediaPlugin?,
-        mode: LibraryMode.Query
-    ): Flow<PagingData<LibraryItem>> {
-        if (plugin == null) return flowOf(PagingData.empty())
-
-        return plugin.getLibraryItems(LibraryQuery())
-            .map { pagingData ->
-                val items = itemMap.value
-                pagingData
-                    .map { remoteItem ->
-                        items[remoteItem.id]
-                            ?.copy(index = remoteItem.index)
-                            ?: remoteItem
-                    }.let {
-                        if (mode.type == QueryModeType.NEW_ONLY) filterNewOnly(it)
-                        else it
-                    }
-            }
-    }
-
-    private fun getQueryItemsForMode(
-        plugin: MediaPlugin?,
-        mode: LibraryMode
+        mode: LibraryMode,
+        items: Map<String, LibraryItem>
     ): Flow<PagingData<LibraryItem>> {
         return when (mode) {
-            is LibraryMode.Query -> getQueryModeItems(plugin, mode)
             is LibraryMode.List -> flowOf(PagingData.empty())
+            is LibraryMode.Query -> {
+                plugin?.getLibraryItems(LibraryQuery())?.map { pagingData ->
+                    pagingData
+                        .map { remoteItem ->
+                            items[remoteItem.id]
+                                ?.copy(index = remoteItem.index)
+                                ?: remoteItem
+                        }.conditionally(mode.type == QueryModeType.NEW_ONLY) {
+                            it.filter { item -> item.status == LibraryItemStatus.NONE }
+                        }
+                } ?: flowOf(PagingData.empty())
+            }
         }
+    }
+
+    override val queryItems: Flow<PagingData<LibraryItem>> by lazy {
+        combine(_currentPlugin, _mode, itemMap, ::Triple)
+            .flatMapLatest { (plugin, mode, items) ->
+                queryItemsForMode(plugin, mode, items)
+            }.cachedIn(scope)
     }
 
     private fun listItemsForMode(
@@ -181,15 +159,44 @@ class ListState: ListStateProvider {
     }
 
     override val listItems by lazy {
-        combine(itemMap, _mode, _currentPage) { items, mode, page ->
-            val items = listItemsForMode(items, mode)
-            val sortedItems = sortForMode(items, mode)
+        combine(itemMap, _mode) { items, mode ->
+            val filteredItems = listItemsForMode(items, mode)
+            val sortedItems = sortForMode(filteredItems, mode)
 
-            val pagedItems = sortedItems
-                .drop(page * LibraryConstants.PAGE_SIZE)
-                .take(LibraryConstants.PAGE_SIZE)
-
-            PagingData.from(pagedItems)
+            PagingData.from(sortedItems)
         }.cachedIn(scope)
+    }
+
+    override fun toggleEditMode() {
+        val current = _mode.value
+        if (current is LibraryMode.List) {
+            _mode.value = current.copy(isEdit = !current.isEdit)
+        }
+    }
+
+    override suspend fun moveItem(item: LibraryItem, fromIndex: Int, toIndex: Int) {
+        val plugin = _currentPlugin.value ?: return
+        val items = itemMap.value
+        val mode = _mode.value
+
+        if (mode !is LibraryMode.List) return
+
+        val allItems = listItemsForMode(items, mode)
+            .sortedBy { it.index }
+            .toMutableList()
+
+        val itemToMove = allItems.find { it.id == item.id } ?: return
+        val oldPosition = allItems.indexOf(itemToMove)
+
+        if (oldPosition == -1 || oldPosition == toIndex) return
+
+        allItems.removeAt(oldPosition)
+        allItems.add(toIndex, itemToMove)
+
+        allItems.forEachIndexed { index, libraryItem ->
+            if (libraryItem.index != index) {
+                LibraryManager.setIndex(plugin, libraryItem, index)
+            }
+        }
     }
 }
