@@ -15,9 +15,6 @@ internal fun LibraryGrid(
     viewModel: LibraryViewModel,
     plugin: MediaPlugin?,
     mode: LibraryMode,
-    scrollIndex: Int,
-    scrollOffset: Int,
-    onScrollPositionChange: (Int, Int) -> Unit,
     onItemClick: (LibraryItem, List<LibraryItem>) -> Unit
 ) {
     val pagerState = when (mode) {
@@ -31,7 +28,6 @@ internal fun LibraryGrid(
             PagingGrid(
                 pager = pager,
                 plugin = plugin,
-                onScrollPositionChange = onScrollPositionChange,
                 onItemClick = onItemClick
             )
         }

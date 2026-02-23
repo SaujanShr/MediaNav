@@ -37,6 +37,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.example.custom_paging.paging.Pager
+import com.example.custom_paging.paging.PagingItem
+import com.example.custom_paging.paging.PagingResult
 import com.example.custom_paging.paging.createApiPagingSource
 
 class AnimePlugin : MediaPlugin {
@@ -100,28 +102,21 @@ class AnimePlugin : MediaPlugin {
             createApiPagingSource(
                 fetchSize = JikanConstants.Query.FETCH_SIZE,
                 fetch = { page, fetchSize ->
-                    service.animeSearch(
-                        finalQuery,
-                        page,
-                        fetchSize,
-                        genreCache
-                    )
+                    service.animeSearch(finalQuery, page, fetchSize, genreCache)
                 },
                 onSuccess = { response ->
                     cacheMutex.withLock {
-                        response.data.forEach { anime ->
-                            animeCache[anime.malId] = anime
-                        }
+                        response.data.forEach { anime -> animeCache[anime.malId] = anime }
                     }
                 },
                 transform = { response, startIndex ->
                     val items = response.data.mapIndexed { offset, anime ->
-                        com.example.custom_paging.paging.PagingItem(
+                        PagingItem(
                             value = anime.toLibraryItem(startIndex + offset),
                             index = startIndex + offset
                         )
                     }
-                    com.example.custom_paging.paging.PagingResult.Success(
+                    PagingResult.Success(
                         items = items,
                         totalCount = response.pagination.items.total
                     )

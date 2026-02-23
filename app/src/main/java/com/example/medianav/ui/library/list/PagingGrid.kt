@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,7 +32,6 @@ import kotlinx.coroutines.launch
 internal fun PagingGrid(
     pager: Pager<LibraryItem>,
     plugin: MediaPlugin?,
-    onScrollPositionChange: (Int, Int) -> Unit,
     onItemClick: (LibraryItem, List<LibraryItem>) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -45,9 +45,37 @@ internal fun PagingGrid(
     val isJumping = remember { mutableStateOf<Int?>(null) } // target page when jumping
     val lastJumpJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
+    // Reset state when pager changes
+    DisposableEffect(pager) {
+        // Clear all state when pager changes
+        loadedItems.clear()
+        loadedPages.value = mutableSetOf()
+        loadedIds.value = mutableSetOf()
+        isLoading.value = false
+        isJumping.value = null
+        lastJumpJob.value?.cancel()
+        lastJumpJob.value = null
+
+        onDispose {
+            // Cancel any ongoing jobs
+            lastJumpJob.value?.cancel()
+            lastJumpJob.value = null
+        }
+    }
 
     // collect pages from pager and append / replace based on jump state
     LaunchedEffect(pager) {
+        // Reset grid scroll position and current page before loading
+        try {
+            gridState.scrollToItem(0)
+        } catch (_: Throwable) {
+            // Ignore if scroll fails
+        }
+
+        // Trigger initial load
+        isLoading.value = true
+        pager.start()
+
         pager.flow().collect { pagingData ->
             // Use the startIndex from PagingData itself to avoid race conditions
             val startIndex = pagingData.startIndex
@@ -119,19 +147,6 @@ internal fun PagingGrid(
 
             isLoading.value = false
         }
-
-        // ensure an initial load occurs if nothing has been loaded yet
-        if (loadedPages.value.isEmpty()) {
-            isLoading.value = true
-            coroutineScope.launch {
-                try {
-                    pager.setCurrentPage(0)
-                    pager.fetchPage(0)
-                } catch (_: Throwable) {
-                    // ignore; pager may already be loading via onSubscription
-                }
-            }
-        }
     }
 
 
@@ -144,13 +159,12 @@ internal fun PagingGrid(
             Triple(first, lastVisibleIndex, loadedItems.size)
         }.collect { (first, lastVisible, totalLoaded) ->
 
-            onScrollPositionChange(first, gridState.firstVisibleItemScrollOffset)
-
             // Calculate the absolute index from the relative position in loadedItems
             val minLoadedPage = loadedPages.value.minOrNull() ?: 0
             val maxLoadedPage = loadedPages.value.maxOrNull()
             val listBaseIndex = minLoadedPage * LibraryConstants.PAGE_SIZE
             val absoluteFirst = first + listBaseIndex
+
 
             // Update the current page indicator based on what the user is viewing
             // But NOT while jumping or loading to prevent intermediate page updates
@@ -204,7 +218,17 @@ internal fun PagingGrid(
         ) {
             items(
                 count = loadedItems.size,
-                key = { loadedItems[it]?.id ?: "placeholder_${it}" }
+                key = { index ->
+                    val item = loadedItems[index]
+                    if (item != null) {
+                        "item_${item.id}_${index}"
+                    } else {
+                        // Calculate absolute index for unique placeholder keys
+                        val minLoadedPage = loadedPages.value.minOrNull() ?: 0
+                        val absoluteIndex = index + (minLoadedPage * LibraryConstants.PAGE_SIZE)
+                        "placeholder_${absoluteIndex}"
+                    }
+                }
             ) { index ->
                 val item = loadedItems[index]
                 Box(modifier = Modifier.padding(4.dp)) {

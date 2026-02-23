@@ -70,30 +70,33 @@ internal class PagerState<Value : Any>(
         _pages.emit(PagingData(emittedItems, startIndex))
     }
 
-    private suspend fun loadAndEmit(page: Int) {
-        val startIndex = page * PagingConstants.Page.PAGE_SIZE
+    private suspend fun load(startIndex: Int, endIndex: Int) {
+        val loadSize = source.loadSize
+        val firstLoadIndex = (startIndex / loadSize) * loadSize
+        val lastLoadIndex = ((endIndex - 1) / loadSize) * loadSize
 
-        val shouldLoad = shouldLoadPage(startIndex)
-
-        if (shouldLoad) {
-            val result = source.load(startIndex)
-            cacheResult(result)
-        }
-
-        emitPage(startIndex)
-    }
-
-    private fun shouldLoadPage(startIndex: Int): Boolean {
-        val pageFullyCached = (0 until PagingConstants.Page.PAGE_SIZE)
-            .all { idx ->
-                itemCache.contains(startIndex + idx)
+        var currentLoadIndex = firstLoadIndex
+        while (currentLoadIndex <= lastLoadIndex) {
+            val chunkFullyCached = (0 until minOf(loadSize, endIndex - currentLoadIndex)).all { offset ->
+                itemCache.contains(currentLoadIndex + offset)
             }
-        return !pageFullyCached
+
+            if (!chunkFullyCached) {
+                val result = source.load(currentLoadIndex)
+                cacheResult(result)
+            }
+
+            currentLoadIndex += loadSize
+        }
     }
 
     suspend fun fetchPage(page: Int) {
         refreshMutex.withLock {
-            loadAndEmit(page)
+            val startIndex = page * PagingConstants.Page.PAGE_SIZE
+            val endIndex = startIndex + PagingConstants.Page.PAGE_SIZE
+
+            load(startIndex, endIndex)
+            emitPage(startIndex)
             evictDistantCacheEntries(page * PagingConstants.Page.PAGE_SIZE)
         }
     }
