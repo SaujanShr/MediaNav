@@ -23,3 +23,4 @@ rootProject.name = "MediaNav"
 include(":app")
 include(":plugin-common")
 include(":plugin-anime")
+include(":custom-paging")

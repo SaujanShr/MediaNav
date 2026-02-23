@@ -14,6 +14,7 @@ internal object JikanConstants {
     }
 
     object Query {
+        const val FETCH_SIZE = 25
         const val SEARCH = "search"
         const val TYPE = "type"
         const val STATUS = "status"

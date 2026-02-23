@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.plugin_anime"
+    namespace = "com.example.custom_paging"
     compileSdk {
         version = release(36)
     }
@@ -30,15 +30,18 @@ android {
 }
 
 dependencies {
-    implementation(project(":plugin-common"))
-    implementation(project(":custom-paging"))
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.gson)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.androidx.paging.common)
+
+    // Coroutine dependencies for pager implementation
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

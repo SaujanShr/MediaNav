@@ -12,23 +12,19 @@ import java.io.File
 
 data class ThumbnailPlayer(val aspectRatio: Float) {
     @Composable
-    fun Remote(url: String, onClick: () -> Unit) {
-        Image(url, aspectRatio, onClick)
+    fun Remote(url: String) {
+        Image(url, aspectRatio)
     }
 
     @Composable
-    fun Local(file: File, onClick: () -> Unit) {
-        Image(file, aspectRatio, onClick)
+    fun Local(file: File) {
+        Image(file, aspectRatio)
     }
 }
 
 @Composable
-private fun Image(image: Any, aspectRatio: Float, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .aspectRatio(aspectRatio)
-            .clickable { onClick() }
-    ) {
+private fun Image(image: Any, aspectRatio: Float) {
+    Box(modifier = Modifier.aspectRatio(aspectRatio)) {
         SubcomposeAsyncImage(
             model = image,
             contentDescription = null,

@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.paging.PagingData
+import com.example.plugin_anime.JikanConverter.toLibraryItem
 import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.domain.AnimeSearchQueryOrderBy
 import com.example.plugin_anime.domain.AnimeSearchQueryStatus
@@ -22,7 +22,6 @@ import com.example.plugin_anime.domain.AnimeSearchQueryType
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.expression.SortDirection
-import com.example.plugin_common.library.expression.SortExpression
 import com.example.plugin_common.library.schema.QuerySchema
 import com.example.plugin_common.library.schema.field.BooleanFieldSchema
 import com.example.plugin_common.library.schema.field.FilterFieldSchema
@@ -34,11 +33,11 @@ import com.example.plugin_common.plugin.MediaPlugin
 import com.example.plugin_common.plugin.PluginCategory
 import com.example.plugin_common.plugin.PluginMetadata
 import com.example.plugin_common.plugin.PluginResources
-import com.example.plugin_common.util.createLibraryPager
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.example.custom_paging.paging.Pager
+import com.example.custom_paging.paging.createApiPagingSource
 
 class AnimePlugin : MediaPlugin {
     override val metadata = PluginMetadata(
@@ -94,30 +93,46 @@ class AnimePlugin : MediaPlugin {
         }
     )
 
-    override fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>> {
-        val query = if (query.isEmpty()) querySchema.defaultQuery() else query
+    override fun getPager(query: LibraryQuery?): Pager<LibraryItem> {
+        val finalQuery = query ?: querySchema.defaultQuery()
 
-        return createLibraryPager(
-            pageSize = 10,
-            pagingSourceFactory = { initialPage, totalCount, totalPages, currentPage ->
-                AnimePagingSource(
-                    service = service,
-                    query = query,
-                    genreCache = genreCache,
-                    animeCache = animeCache,
-                    cacheMutex = cacheMutex,
-                    initialPage = initialPage,
-                    totalCountFlow = totalCount,
-                    totalPagesFlow = totalPages,
-                    currentPageFlow = currentPage
-                )
-            }
+        return Pager(
+            createApiPagingSource(
+                fetchSize = JikanConstants.Query.FETCH_SIZE,
+                fetch = { page, fetchSize ->
+                    service.animeSearch(
+                        finalQuery,
+                        page,
+                        fetchSize,
+                        genreCache
+                    )
+                },
+                onSuccess = { response ->
+                    cacheMutex.withLock {
+                        response.data.forEach { anime ->
+                            animeCache[anime.malId] = anime
+                        }
+                    }
+                },
+                transform = { response, startIndex ->
+                    val items = response.data.mapIndexed { offset, anime ->
+                        com.example.custom_paging.paging.PagingItem(
+                            value = anime.toLibraryItem(startIndex + offset),
+                            index = startIndex + offset
+                        )
+                    }
+                    com.example.custom_paging.paging.PagingResult.Success(
+                        items = items,
+                        totalCount = response.pagination.items.total
+                    )
+                }
+            )
         )
     }
 
     @Composable
-    override fun Thumbnail(item: LibraryItem, onClick: () -> Unit) {
-        thumbnailPlayer.Remote(item.thumbnailUrl, onClick)
+    override fun Thumbnail(item: LibraryItem) {
+        thumbnailPlayer.Remote(item.thumbnailUrl)
     }
 
     @Composable

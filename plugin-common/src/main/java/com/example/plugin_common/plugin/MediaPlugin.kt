@@ -1,11 +1,10 @@
 package com.example.plugin_common.plugin
 
 import androidx.compose.runtime.Composable
-import androidx.paging.PagingData
+import com.example.custom_paging.paging.Pager
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.schema.QuerySchema
-import kotlinx.coroutines.flow.Flow
 
 interface MediaPlugin {
     val metadata: PluginMetadata
@@ -14,10 +13,10 @@ interface MediaPlugin {
 
     suspend fun initialize()
 
-    fun getLibraryItems(query: LibraryQuery): Flow<PagingData<LibraryItem>>
+    fun getPager(query: LibraryQuery?): Pager<LibraryItem>
 
     @Composable
-    fun Thumbnail(item: LibraryItem, onClick: () -> Unit)
+    fun Thumbnail(item: LibraryItem)
 
     @Composable
     fun PreviewContent(item: LibraryItem)

@@ -42,7 +42,6 @@ internal fun LibraryTitle(
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(end = 8.dp)
     ) {
         Text(
             text = title,

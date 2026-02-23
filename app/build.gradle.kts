@@ -22,10 +22,6 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
     }
     compileOptions {
@@ -46,6 +42,7 @@ kotlin {
 dependencies {
     implementation(project(":plugin-common"))
     implementation(project(":plugin-anime"))
+    implementation(project(":custom-paging"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
