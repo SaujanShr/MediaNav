@@ -3,20 +3,16 @@ package com.example.medianav.ui.shared
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun LockScreenOrientation(orientation: Int = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
     val context = LocalContext.current
 
-    DisposableEffect(orientation) {
-        val activity = context as? Activity ?: return@DisposableEffect onDispose {}
-        activity.requestedOrientation = orientation
-        onDispose {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
+    SideEffect {
+        val activity = context as? Activity
+        activity?.requestedOrientation = orientation
     }
 }
-
 

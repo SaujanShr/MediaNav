@@ -1,5 +1,6 @@
 package com.example.medianav.ui.library.media
 
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.medianav.ui.library.LibraryViewModel
+import com.example.medianav.ui.shared.LockScreenOrientation
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
 import com.example.plugin_common.plugin.MediaPlugin
@@ -57,6 +59,8 @@ fun MediaDetailScreen(
     viewModel: LibraryViewModel,
     onBack: () -> Unit
 ) {
+    LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+
     val currentItem by viewModel.currentItem.collectAsState()
     val plugin by viewModel.currentPlugin.collectAsState()
     val canNavigateNext by viewModel.canNavigateNext.collectAsState()
