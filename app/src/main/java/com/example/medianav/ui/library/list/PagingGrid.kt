@@ -14,18 +14,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.custom_paging.paging.Pager
 import com.example.medianav.library.LibraryConstants
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.plugin.MediaPlugin
-import kotlinx.coroutines.launch
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -37,179 +36,91 @@ internal fun PagingGrid(
     val coroutineScope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
 
-    // accumulated items and loaded pages (use nullable entries as placeholders)
-    val loadedItems = remember { mutableStateListOf<LibraryItem?>() }
-    val loadedPages = remember { mutableStateOf(mutableSetOf<Int>()) }
-    val loadedIds = remember { mutableStateOf(mutableSetOf<String>()) }
-    val isLoading = remember { mutableStateOf(false) }
-    val isJumping = remember { mutableStateOf<Int?>(null) } // target page when jumping
-    val lastJumpJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // Track previous list size to detect when new items are added
+    var previousListSize by remember { mutableStateOf(0) }
+    var savedScrollIndex by remember { mutableStateOf(0) }
+    var savedScrollOffset by remember { mutableStateOf(0) }
 
-    // Reset state when pager changes
+    // Create controller for this pager
+    val controller = remember(pager) {
+        pager.createController(LibraryConstants.PAGE_SIZE, coroutineScope)
+    }
+
+    // Collect state from controller
+    val loadedItems by controller.loadedItems.collectAsState()
+    val loadedPages by controller.loadedPages.collectAsState()
+    val isJumping by controller.isJumping.collectAsState()
+    val currentPage by controller.currentPage.collectAsState()
+    val totalPages by controller.totalPages.collectAsState()
+
+    // Reset and start when pager changes
     DisposableEffect(pager) {
-        // Clear all state when pager changes
-        loadedItems.clear()
-        loadedPages.value = mutableSetOf()
-        loadedIds.value = mutableSetOf()
-        isLoading.value = false
-        isJumping.value = null
-        lastJumpJob.value?.cancel()
-        lastJumpJob.value = null
+        controller.reset()
 
         onDispose {
-            // Cancel any ongoing jobs
-            lastJumpJob.value?.cancel()
-            lastJumpJob.value = null
+            // Cleanup handled by controller
         }
     }
 
-    // collect pages from pager and append / replace based on jump state
     LaunchedEffect(pager) {
-        // Reset grid scroll position and current page before loading
+        // Reset grid scroll position
         try {
             gridState.scrollToItem(0)
         } catch (_: Throwable) {
             // Ignore if scroll fails
         }
 
-        // Trigger initial load
-        isLoading.value = true
-        pager.start()
+        // Start loading
+        controller.start()
+    }
 
-        pager.flow().collect { pagingData ->
-            // Use the startIndex from PagingData itself to avoid race conditions
-            val startIndex = pagingData.startIndex
-            val pageIndex = startIndex / LibraryConstants.PAGE_SIZE
-
-            // Determine the range we need to cover (from min to max loaded pages)
-            val minLoadedPage = loadedPages.value.minOrNull() ?: pageIndex
-            val maxLoadedPage = loadedPages.value.maxOrNull() ?: pageIndex
-            val actualMinPage = minOf(minLoadedPage, pageIndex)
-            val actualMaxPage = maxOf(maxLoadedPage, pageIndex)
-
-            val minIndex = actualMinPage * LibraryConstants.PAGE_SIZE
-            val maxIndex = (actualMaxPage + 1) * LibraryConstants.PAGE_SIZE
-
-            // Ensure loadedItems covers from minIndex to maxIndex (fill gaps with nulls)
-            if (loadedItems.isEmpty()) {
-                // First load: start from minIndex
-                repeat(maxIndex - minIndex) { loadedItems.add(null) }
-            } else {
-                // Expand list if needed to cover the new page
-
-                // If the new page is beyond our current range, expand
-                while (loadedItems.size < (maxIndex - minIndex)) {
-                    loadedItems.add(null)
-                }
-
-                // If loading a page before our current minimum, we need to prepend
-                if (minIndex < 0) {
-                    val itemsToPrepend = -minIndex
-                    repeat(itemsToPrepend) {
-                        loadedItems.add(0, null)
-                    }
-                }
+    // Handle jumps - scroll to the target page after data loads
+    LaunchedEffect(isJumping, loadedPages) {
+        if (!isJumping && loadedPages.isNotEmpty()) {
+            // After a jump completes, scroll to the page
+            val scrollIndex = controller.getScrollIndexForPage(currentPage)
+            try {
+                gridState.scrollToItem(scrollIndex)
+            } catch (_: Throwable) {
+                // Ignore if scroll fails
             }
-
-            val listBaseIndex = minIndex
-
-            // Insert/replace items at the absolute positions
-            pagingData.items.forEach { indexedItem ->
-                val absoluteIdx = indexedItem.index
-                val relativeIdx = absoluteIdx - listBaseIndex
-                val item = indexedItem.value
-
-                if (relativeIdx < 0 || relativeIdx >= loadedItems.size) {
-                    // This shouldn't happen, but guard against it
-                    return@forEach
-                }
-
-                val existing = loadedItems[relativeIdx]
-                if (existing == null || existing.id != item.id) {
-                    loadedItems[relativeIdx] = item
-                }
-
-                loadedIds.value.add(item.id)
-            }
-
-            // Track that we've loaded this page
-            loadedPages.value.add(pageIndex)
-
-            if (isJumping.value != null) {
-                // If we were jumping, scroll to the page start
-                val relativeStartIndex = startIndex - listBaseIndex
-                try {
-                    gridState.scrollToItem(relativeStartIndex.coerceAtLeast(0))
-                } catch (_: Throwable) {
-                }
-                isJumping.value = null
-            }
-
-            isLoading.value = false
         }
     }
 
+    // Preserve scroll position when new items load
+    LaunchedEffect(loadedItems.size) {
+        if (loadedItems.size > previousListSize && previousListSize > 0 && !isJumping) {
+            // Items were added - restore scroll position
+            try {
+                gridState.scrollToItem(savedScrollIndex, savedScrollOffset)
+            } catch (_: Throwable) {
+                // Ignore scroll failures
+            }
+        }
+        previousListSize = loadedItems.size
+    }
 
-    // observe scroll position and trigger page load ONLY when user scrolls beyond boundaries
-    LaunchedEffect(gridState, pager) {
+    // Observe scroll position and update current page / trigger prefetch
+    LaunchedEffect(gridState, controller) {
         snapshotFlow {
             val first = gridState.firstVisibleItemIndex
-            val visibleCount = gridState.layoutInfo.visibleItemsInfo.size
-            val lastVisibleIndex = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: (first + visibleCount - 1)
-            Triple(first, lastVisibleIndex, loadedItems.size)
-        }.collect { (first, lastVisible, totalLoaded) ->
+            val lastVisible = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: first
+            val scrollOffset = gridState.firstVisibleItemScrollOffset
+            Triple(first, lastVisible, scrollOffset)
+        }.collect { (first, lastVisible, scrollOffset) ->
+            // Save current scroll position
+            savedScrollIndex = first
+            savedScrollOffset = scrollOffset
 
-            // Calculate the absolute index from the relative position in loadedItems
-            val minLoadedPage = loadedPages.value.minOrNull() ?: 0
-            val maxLoadedPage = loadedPages.value.maxOrNull()
-            val listBaseIndex = minLoadedPage * LibraryConstants.PAGE_SIZE
-            val absoluteFirst = first + listBaseIndex
-
-
-            // Update the current page indicator based on what the user is viewing
-            // But NOT while jumping or loading to prevent intermediate page updates
-            if (isJumping.value == null && !isLoading.value) {
-                // Special case: if scrolled to the end and last page is loaded, show last page
-                val totalPages = pager.totalPages.value
-                val lastPageIndex = if (totalPages > 0) totalPages - 1 else 0
-                val hasLastPage = maxLoadedPage != null && maxLoadedPage == lastPageIndex
-                val atEnd = lastVisible >= totalLoaded - 1
-
-                val viewingPage = if (hasLastPage && atEnd) {
-                    // User is at the end and we have the last page loaded - show last page
-                    lastPageIndex
-                } else {
-                    // Calculate normally based on scroll position
-                    absoluteFirst / LibraryConstants.PAGE_SIZE
-                }
-                pager.setCurrentPage(viewingPage)
-            }
-
-            // Only forward prefetch when user scrolls to the very last item
-            if (!isLoading.value && isJumping.value == null && totalLoaded > 0) {
-                val maxLoadedPageNum = loadedPages.value.maxOrNull()
-
-
-                // FORWARD PREFETCH: Only when user scrolls to the very last item
-                if (lastVisible >= totalLoaded - 1 && maxLoadedPageNum != null) {
-                    val nextPage = maxLoadedPageNum + 1
-                    val totalPagesValue = pager.totalPages.value
-                    if (!loadedPages.value.contains(nextPage) &&
-                        (totalPagesValue !in 1..nextPage)) {
-                        isLoading.value = true
-                        coroutineScope.launch {
-                            pager.fetchPage(nextPage)
-                        }
-                    }
-                }
+            // Only update if not currently jumping
+            if (!isJumping) {
+                controller.updateCurrentPageFromScroll(first, lastVisible)
+                controller.prefetchIfNeeded(lastVisible)
             }
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        val currentPage by pager.currentPage.collectAsState(initial = 0)
-        val totalPages by pager.totalPages.collectAsState(initial = 0)
-
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             state = gridState,
@@ -221,10 +132,10 @@ internal fun PagingGrid(
                 key = { index ->
                     val item = loadedItems[index]
                     if (item != null) {
-                        "item_${item.id}_${index}"
+                        "item_${item.id}"
                     } else {
                         // Calculate absolute index for unique placeholder keys
-                        val minLoadedPage = loadedPages.value.minOrNull() ?: 0
+                        val minLoadedPage = loadedPages.minOrNull() ?: 0
                         val absoluteIndex = index + (minLoadedPage * LibraryConstants.PAGE_SIZE)
                         "placeholder_${absoluteIndex}"
                     }
@@ -248,43 +159,14 @@ internal fun PagingGrid(
             }
         }
 
-
         if (totalPages > 1) {
             PageBar(
                 currentPage = currentPage,
                 totalPages = totalPages,
                 onPageChange = { page ->
-                    // jump to a page: clear and request page
-                    isJumping.value = page
-                    // cancel any previous jump and start a new jump job
-                    lastJumpJob.value?.cancel()
-                    isJumping.value = page
-                    // clear current items immediately to avoid mixing pages
-                    loadedItems.clear()
-                    loadedIds.value.clear()
-                    loadedPages.value = mutableSetOf()
-                    isLoading.value = true
-                    lastJumpJob.value = coroutineScope.launch {
-                        try {
-                            pager.setCurrentPage(page)
-                            pager.fetchPage(page)
-                        } catch (_: Throwable) {
-                            // ensure we don't stay stuck in loading state if jump fails/cancelled
-                            isLoading.value = false
-                        }
-                    }
-                    lastJumpJob.value?.invokeOnCompletion { cause ->
-                        // If the job was cancelled or failed (cause != null), reset loading/jump state
-                        if (cause != null) {
-                            isLoading.value = false
-                            isJumping.value = null
-                        }
-                        // clear the job reference in any case
-                        lastJumpJob.value = null
-                    }
+                    controller.jumpToPage(page)
                 }
             )
         }
     }
 }
-

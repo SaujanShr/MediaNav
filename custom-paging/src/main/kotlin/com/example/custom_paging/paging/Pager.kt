@@ -19,16 +19,15 @@ class Pager<Value : Any>(pagingSource: PagingSource<Value>) {
 
     fun flow(): Flow<PagingData<Value>> = state.pages
 
-    suspend fun start() {
-        setCurrentPage(PagingConstants.Page.INITIAL_PAGE)
-        fetchPage(PagingConstants.Page.INITIAL_PAGE)
-    }
-
     suspend fun fetchPage(page: Int) {
         state.fetchPage(page)
     }
 
     fun setCurrentPage(page: Int) {
         state.setCurrentPage(page)
+    }
+
+    fun createController(pageSize: Int, scope: CoroutineScope): PagerController<Value> {
+        return PagerController(this, pageSize, scope)
     }
 }
