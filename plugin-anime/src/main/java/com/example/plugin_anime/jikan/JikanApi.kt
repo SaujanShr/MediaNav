@@ -1,15 +1,14 @@
-package com.example.plugin_anime
+package com.example.plugin_anime.jikan
 
-import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.domain.AnimeByIdParam
 import com.example.plugin_anime.domain.AnimeByIdResponse
-import com.google.gson.Gson
 import com.example.plugin_anime.domain.AnimeGenreQuery
 import com.example.plugin_anime.domain.AnimeGenreResponse
 import com.example.plugin_anime.domain.AnimeSearchQuery
 import com.example.plugin_anime.domain.AnimeSearchResponse
 import com.example.plugin_common.api.Api
 import com.example.plugin_common.util.buildApiUrl
+import com.google.gson.Gson
 
 internal class JikanApi {
     private val api = Api(requestsPerMinute = JikanConstants.Request.REQUESTS_PER_MINUTE)

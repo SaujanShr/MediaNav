@@ -1,11 +1,16 @@
-package com.example.plugin_anime
+package com.example.plugin_anime.jikan
 
-import com.example.plugin_anime.JikanConverter.toSearchQuery
-import com.example.plugin_anime.domain.*
-import com.example.plugin_common.util.mapAsyncNotNull
+import com.example.plugin_anime.jikan.JikanConverter.toSearchQuery
+import com.example.plugin_anime.domain.AnimeByIdParam
+import com.example.plugin_anime.domain.AnimeByIdResponse
+import com.example.plugin_anime.domain.AnimeGenreQuery
+import com.example.plugin_anime.domain.AnimeSearchResponse
+import com.example.plugin_anime.domain.Genre
+import com.example.plugin_anime.domain.GenreQueryFilter
 import com.example.plugin_common.library.LibraryQuery
+import com.example.plugin_common.util.mapAsyncNotNull
 
-internal class AnimeService {
+internal class JikanService {
     private val api = JikanApi()
 
     suspend fun animeSearch(

@@ -1,4 +1,4 @@
-package com.example.plugin_anime
+package com.example.plugin_anime.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

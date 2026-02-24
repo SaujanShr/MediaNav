@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.plugin_anime.JikanConverter.toLibraryItem
+import com.example.plugin_anime.jikan.JikanConverter.toLibraryItem
 import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.domain.AnimeSearchQueryOrderBy
 import com.example.plugin_anime.domain.AnimeSearchQueryStatus
@@ -40,6 +40,9 @@ import com.example.custom_paging.paging.Pager
 import com.example.custom_paging.paging.PagingItem
 import com.example.custom_paging.paging.PagingResult
 import com.example.custom_paging.paging.createApiPagingSource
+import com.example.plugin_anime.jikan.JikanConstants
+import com.example.plugin_anime.jikan.JikanService
+import com.example.plugin_anime.ui.AnimeSettingsScreen
 
 class AnimePlugin : MediaPlugin {
     override val metadata = PluginMetadata(
@@ -53,9 +56,9 @@ class AnimePlugin : MediaPlugin {
         bannerResId = R.drawable.ic_banner
     )
 
-    private val service = AnimeService()
+    private val databaseService = JikanService()
     private val animeCache = mutableMapOf<Int, Anime>()
-    private val genreCache = runBlocking { service.genreCache() }
+    private val genreCache = runBlocking { databaseService.genreCache() }
     private val cacheMutex = Mutex()
 
     private val thumbnailPlayer = ThumbnailPlayer(75f / 106f)
@@ -66,11 +69,13 @@ class AnimePlugin : MediaPlugin {
     override val querySchema = QuerySchema(
         fields = buildMap {
             put(JikanConstants.Query.SEARCH, SearchFieldSchema())
-            put(JikanConstants.Query.TYPE, FilterFieldSchema(
+            put(
+                JikanConstants.Query.TYPE, FilterFieldSchema(
                 supported = AnimeSearchQueryType.entries.map { it.value }.toSet(),
                 include = true
             ))
-            put(JikanConstants.Query.STATUS, FilterFieldSchema(
+            put(
+                JikanConstants.Query.STATUS, FilterFieldSchema(
                 supported = AnimeSearchQueryStatus.entries.map { it.value }.toSet(),
                 include = true
             ))
@@ -85,7 +90,8 @@ class AnimePlugin : MediaPlugin {
                 ))
             }
 
-            put(JikanConstants.Query.ORDER_BY, SortFieldSchema(
+            put(
+                JikanConstants.Query.ORDER_BY, SortFieldSchema(
                 supported = AnimeSearchQueryOrderBy.entries.map { it.value }.toSet(),
                 ascending = true,
                 descending = true,
@@ -102,7 +108,7 @@ class AnimePlugin : MediaPlugin {
             createApiPagingSource(
                 fetchSize = JikanConstants.Query.FETCH_SIZE,
                 fetch = { page, fetchSize ->
-                    service.animeSearch(finalQuery, page, fetchSize, genreCache)
+                    databaseService.animeSearch(finalQuery, page, fetchSize, genreCache)
                 },
                 onSuccess = { response ->
                     cacheMutex.withLock {
@@ -236,7 +242,7 @@ class AnimePlugin : MediaPlugin {
             cacheMutex.withLock {
                 anime = animeCache[item.id.toIntOrNull()]
                 if (anime == null) {
-                    service.getAnimeById(item.id.toInt(), genreCache)
+                    databaseService.getAnimeById(item.id.toInt(), genreCache)
                         .onSuccess { response ->
                             anime = response.data
                             animeCache[item.id.toInt()] = response.data

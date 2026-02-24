@@ -1,4 +1,4 @@
-package com.example.plugin_anime
+package com.example.plugin_anime.jikan
 
 import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.domain.AnimeSearchQuery
@@ -27,16 +27,16 @@ internal object JikanConverter {
             limit = limit,
             q = searchFields["search"],
             type = filterFields["type"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryType.fromValue(it)
+                AnimeSearchQueryType.Companion.fromValue(it)
             },
             status = filterFields["status"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryStatus.fromValue(it)
+                AnimeSearchQueryStatus.Companion.fromValue(it)
             },
             sfw = booleanFields["sfw"],
             genres = genresInclude.joinToString(","),
             genresExclude = genresExclude.joinToString(","),
             orderBy = sortFields["orderBy"]?.sort?.let {
-                AnimeSearchQueryOrderBy.fromValue(it)
+                AnimeSearchQueryOrderBy.Companion.fromValue(it)
             },
             sort = sortFields["orderBy"]?.direction?.let {
                 when (it) {

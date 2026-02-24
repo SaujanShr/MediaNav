@@ -1,4 +1,4 @@
-package com.example.plugin_anime
+package com.example.plugin_anime.jikan
 
 internal object JikanConstants {
     object Request {
