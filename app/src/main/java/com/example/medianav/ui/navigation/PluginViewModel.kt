@@ -10,6 +10,9 @@ class PluginViewModel : ViewModel() {
     private val _currentPlugin = MutableStateFlow<MediaPlugin?>(null)
     val currentPlugin: StateFlow<MediaPlugin?> get() = _currentPlugin
 
+    private val _pluginSettings = MutableStateFlow<MediaPlugin?>(null)
+    val pluginSettings: StateFlow<MediaPlugin?> get() = _pluginSettings
+
     val plugins = PluginManager.plugins
 
     val enabledPlugins: StateFlow<List<MediaPlugin>> = combine(
@@ -31,5 +34,13 @@ class PluginViewModel : ViewModel() {
 
     fun clearPlugin() {
         _currentPlugin.value = null
+    }
+
+    fun openPluginSettings(plugin: MediaPlugin) {
+        _pluginSettings.value = plugin
+    }
+
+    fun closePluginSettings() {
+        _pluginSettings.value = null
     }
 }

@@ -219,7 +219,13 @@ class AnimePlugin : MediaPlugin {
     }
 
     @Composable
-    override fun SettingsContent() {
+    override fun SettingsScreen(onBack: () -> Unit) {
+        AnimeSettingsScreen(
+            metadata = metadata,
+            animeCache = animeCache,
+            genreCache = genreCache,
+            onBack = onBack
+        )
     }
 
     @Composable

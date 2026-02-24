@@ -1,22 +1,13 @@
 package com.example.medianav.ui.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.plugin_common.settings.SettingsContent
@@ -28,6 +19,12 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
     pluginViewModel: PluginViewModel
 ) {
+    val errorMessages = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(settingsViewModel) {
+        settingsViewModel.errors.collect { errorMessages.add(it) }
+    }
+
     val settingsGroups = listOf(
         SettingsGroup(
             "Plugins",
@@ -44,6 +41,8 @@ fun SettingsScreen(
             )
         )
     )
-
-    SettingsContent(settingsGroups = settingsGroups)
+    Box(modifier = Modifier.fillMaxSize()) {
+        SettingsContent(settingsGroups = settingsGroups)
+        ErrorBannerList(errorMessages, Modifier.align(Alignment.TopCenter))
+    }
 }
