@@ -108,11 +108,9 @@ internal fun PagingGrid(
             val scrollOffset = gridState.firstVisibleItemScrollOffset
             Triple(first, lastVisible, scrollOffset)
         }.collect { (first, lastVisible, scrollOffset) ->
-            // Save current scroll position
             savedScrollIndex = first
             savedScrollOffset = scrollOffset
 
-            // Only update if not currently jumping
             if (!isJumping) {
                 controller.updateCurrentPageFromScroll(first, lastVisible)
                 controller.prefetchIfNeeded(lastVisible)
@@ -134,7 +132,6 @@ internal fun PagingGrid(
                     if (item != null) {
                         "item_${item.id}"
                     } else {
-                        // Calculate absolute index for unique placeholder keys
                         val minLoadedPage = loadedPages.minOrNull() ?: 0
                         val absoluteIndex = index + (minLoadedPage * LibraryConstants.PAGE_SIZE)
                         "placeholder_${absoluteIndex}"
@@ -148,11 +145,14 @@ internal fun PagingGrid(
                             LibraryCell(
                                 item = item,
                                 plugin = it,
-                                onClick = { onItemClick(item, emptyList()) }
+                                onClick = {
+                                    // Pass all non-null loaded items for navigation
+                                    val nonNullItems = loadedItems.filterNotNull()
+                                    onItemClick(item, nonNullItems)
+                                }
                             )
                         }
                     } else {
-                        // Empty placeholder box for unloaded items
                         Box(modifier = Modifier)
                     }
                 }

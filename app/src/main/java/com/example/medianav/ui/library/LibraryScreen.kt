@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.library.list.LibraryGrid
 import com.example.medianav.ui.library.list.header.LibraryHeader
-import com.example.medianav.ui.library.media.MediaDetailScreen
+import com.example.medianav.ui.library.media.MediaScreen
 import com.example.medianav.ui.navigation.PluginViewModel
 
 @Composable
@@ -40,7 +40,7 @@ fun LibraryScreen(
             )
         }
         if (currentItem != null) {
-            MediaDetailScreen(
+            MediaScreen(
                 viewModel = libraryViewModel,
                 onBack = { libraryViewModel.clearItem() }
             )
