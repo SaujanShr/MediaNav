@@ -16,23 +16,20 @@ import com.example.medianav.ui.navigation.PluginViewModel
 import com.example.plugin_common.plugin.MediaPlugin
 import com.example.medianav.ui.shared.NoPlugin
 import com.example.medianav.ui.shared.Plugin
+import com.example.plugin_common.settings.Setting
 
 @Composable
-internal fun TogglePluginSetting(
+internal fun togglePluginSetting(
     settingsViewModel: SettingsViewModel,
     pluginViewModel: PluginViewModel
-) {
-    Setting(
-        viewModel = settingsViewModel,
-        title = "Enable Plugins",
-        subtitle = "Enable or disable plugins",
-        leftIcon = Icons.Outlined.ToggleOn,
-        type = SettingType.TOGGLE,
-        dropdownContent = {
-            ToggleInstalledPluginDropdown(settingsViewModel, pluginViewModel)
-        }
-    )
-}
+) = Setting(
+    title = "Enable Plugins",
+    subtitle = "Enable or disable plugins",
+    leftIcon = Icons.Outlined.ToggleOn,
+    dropdownContent = {
+        ToggleInstalledPluginDropdown(settingsViewModel, pluginViewModel)
+    }
+)
 
 @Composable
 private fun ToggleInstalledPluginDropdown(

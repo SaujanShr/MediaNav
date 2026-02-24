@@ -24,13 +24,6 @@ class SettingsViewModel : ViewModel() {
         _errors.emit(message)
     }
 
-    private val _expandedSetting = MutableStateFlow<SettingType?>(null)
-    val expandedSetting: StateFlow<SettingType?> = _expandedSetting.asStateFlow()
-
-    fun toggleExpanded(setting: SettingType) {
-        _expandedSetting.value = if (_expandedSetting.value == setting) null else setting
-    }
-
     val theme = ConfigManager.theme
 
     fun setTheme(theme: Theme) {

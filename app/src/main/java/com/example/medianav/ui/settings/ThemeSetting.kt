@@ -21,17 +21,16 @@ import androidx.compose.ui.unit.dp
 import com.example.medianav.config.ConfigManager
 import com.example.medianav.ui.theme.Theme
 import com.example.plugin_common.util.toTitleCase
+import com.example.plugin_common.settings.Setting
 
 @Composable
-internal fun ThemeSetting(viewModel: SettingsViewModel) {
+internal fun themeSetting(viewModel: SettingsViewModel): Setting {
     val currentTheme by ConfigManager.theme.collectAsState()
 
-    Setting(
-        viewModel = viewModel,
+    return Setting(
         title = "App Theme",
         subtitle = currentTheme.value.toTitleCase(),
         leftIcon = Icons.Default.Palette,
-        type = SettingType.THEME,
         dropdownContent = {
             ThemeDropdown(viewModel, currentTheme)
         }

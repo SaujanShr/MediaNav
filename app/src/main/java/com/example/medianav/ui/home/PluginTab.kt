@@ -1,5 +1,6 @@
 package com.example.medianav.ui.home
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,7 +53,7 @@ internal fun PluginTab(
         derivedStateOf { getFilteredPlugins(enabledPlugins, selectedTabIndex) }
     }
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PluginTabRow(
             selectedIndex = selectedTabIndex,
             onTabSelected = { selectedTabIndex = it }

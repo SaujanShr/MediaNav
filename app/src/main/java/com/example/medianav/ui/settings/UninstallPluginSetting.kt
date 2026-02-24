@@ -15,23 +15,20 @@ import com.example.plugin_common.plugin.MediaPlugin
 import com.example.medianav.ui.shared.ConfirmDialog
 import com.example.medianav.ui.shared.NoPlugin
 import com.example.medianav.ui.shared.Plugin
+import com.example.plugin_common.settings.Setting
 
 @Composable
-internal fun UninstallPluginSetting(
+internal fun uninstallPluginSetting(
     settingsViewModel: SettingsViewModel,
     pluginViewModel: PluginViewModel
-) {
-    Setting(
-        viewModel = settingsViewModel,
-        title = "Uninstall Plugin",
-        subtitle = "Select a plugin to uninstall",
-        leftIcon = Icons.Outlined.ExtensionOff,
-        type = SettingType.UNINSTALL,
-        dropdownContent = {
-            UninstallPluginDropdown(settingsViewModel, pluginViewModel)
-        }
-    )
-}
+) = Setting(
+    title = "Uninstall Plugin",
+    subtitle = "Select a plugin to uninstall",
+    leftIcon = Icons.Outlined.ExtensionOff,
+    dropdownContent = {
+        UninstallPluginDropdown(settingsViewModel, pluginViewModel)
+    }
+)
 
 @Composable
 private fun UninstallPluginDropdown(

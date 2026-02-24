@@ -1,4 +1,4 @@
-package com.example.medianav.ui.shared
+package com.example.plugin_common.shared
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

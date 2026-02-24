@@ -19,50 +19,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.medianav.ui.shared.ErrorBannerList
+import com.example.plugin_common.settings.SettingsContent
+import com.example.plugin_common.settings.SettingsGroup
+import com.example.plugin_common.shared.ErrorBannerList
 
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
     pluginViewModel: PluginViewModel
 ) {
-    val errorMessages = remember { mutableStateListOf<String>() }
-
-    LaunchedEffect(settingsViewModel) {
-        settingsViewModel.errors.collect { errorMessages.add(it) }
-    }
-
-    val scrollState = rememberScrollState()
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SettingsSectionHeader("Plugins")
-
-            InstallPluginSetting(settingsViewModel)
-            UninstallPluginSetting(settingsViewModel, pluginViewModel)
-            TogglePluginSetting(settingsViewModel, pluginViewModel)
-
-            SettingsSectionHeader("Display")
-            ThemeSetting(settingsViewModel)
-        }
-
-        ErrorBannerList(errorMessages, Modifier.align(Alignment.TopCenter))
-    }
-}
-
-
-@Composable
-private fun SettingsSectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(8.dp)
+    val settingsGroups = listOf(
+        SettingsGroup(
+            "Plugins",
+            listOf(
+                installPluginSetting(settingsViewModel),
+                uninstallPluginSetting(settingsViewModel, pluginViewModel),
+                togglePluginSetting(settingsViewModel, pluginViewModel)
+            )
+        ),
+        SettingsGroup(
+            "Display",
+            listOf(
+                themeSetting(settingsViewModel)
+            )
+        )
     )
+
+    SettingsContent(settingsGroups = settingsGroups)
 }
