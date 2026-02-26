@@ -36,10 +36,8 @@ import com.example.plugin_common.plugin.PluginResources
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import com.example.custom_paging.paging.Pager
-import com.example.custom_paging.paging.PagingItem
-import com.example.custom_paging.paging.PagingResult
-import com.example.custom_paging.paging.createApiPagingSource
+import com.example.plugin_common.paging.LibraryPager
+import com.example.plugin_common.paging.createLibraryApiPager
 import com.example.plugin_anime.jikan.JikanConstants
 import com.example.plugin_anime.jikan.JikanService
 import com.example.plugin_anime.ui.AnimeSettingsScreen
@@ -101,33 +99,26 @@ class AnimePlugin : MediaPlugin {
         }
     )
 
-    override fun getPager(query: LibraryQuery?): Pager<LibraryItem> {
+    override fun getPager(query: LibraryQuery?): LibraryPager<LibraryItem> {
         val finalQuery = query ?: querySchema.defaultQuery()
 
-        return Pager(
-            createApiPagingSource(
-                fetchSize = JikanConstants.Query.FETCH_SIZE,
-                fetch = { page, fetchSize ->
-                    databaseService.animeSearch(finalQuery, page, fetchSize, genreCache)
-                },
-                onSuccess = { response ->
+        return createLibraryApiPager(
+            pageSize = JikanConstants.Query.FETCH_SIZE,
+            prefetchDistance = 5,
+            fetch = { page, fetchSize ->
+                databaseService.animeSearch(finalQuery, page, fetchSize, genreCache)
+            },
+            transform = { response, _ ->
+                runBlocking {
                     cacheMutex.withLock {
                         response.data.forEach { anime -> animeCache[anime.malId] = anime }
                     }
-                },
-                transform = { response, startIndex ->
-                    val items = response.data.mapIndexed { offset, anime ->
-                        PagingItem(
-                            value = anime.toLibraryItem(startIndex + offset),
-                            index = startIndex + offset
-                        )
-                    }
-                    PagingResult.Success(
-                        items = items,
-                        totalCount = response.pagination.items.total
-                    )
                 }
-            )
+                val items = response.data.mapIndexed { index, anime ->
+                    anime.toLibraryItem(index)
+                }
+                items to response.pagination.items.total
+            }
         )
     }
 

@@ -1,9 +1,7 @@
 package com.example.medianav.ui.library.list
 
-import com.example.custom_paging.paging.Pager
-import com.example.custom_paging.paging.PagingItem
-import com.example.custom_paging.paging.PagingResult
-import com.example.custom_paging.paging.createPagingSource
+import com.example.plugin_common.paging.LibraryPager
+import com.example.plugin_common.paging.createLibraryListPager
 import com.example.medianav.library.LibraryConstants
 import com.example.medianav.ui.library.mode.LibraryMode
 import com.example.medianav.ui.library.mode.ListModeSort
@@ -11,32 +9,15 @@ import com.example.medianav.ui.library.mode.ListModeStatus
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
 
-fun getListPager(items: Map<String, LibraryItem>, mode: LibraryMode.List): Pager<LibraryItem> {
+fun getListPager(items: Map<String, LibraryItem>, mode: LibraryMode.List): LibraryPager<LibraryItem> {
     val filteredItems = listItemsForMode(items, mode)
     val sortedItems = sortForMode(filteredItems, mode)
 
-    val pager = Pager(
-        createPagingSource(
-            loadSize = LibraryConstants.PAGE_SIZE,
-            loader = { startIndex ->
-                val pageSize = LibraryConstants.PAGE_SIZE
-                val endIndex = minOf(startIndex + pageSize, sortedItems.size)
-
-                if (startIndex >= sortedItems.size) {
-                    PagingResult.Success(emptyList(), sortedItems.size)
-                } else {
-                    val pageItems = sortedItems.subList(startIndex, endIndex)
-                        .mapIndexed { offset, item ->
-                            PagingItem(item, startIndex + offset)
-                        }
-
-                    PagingResult.Success(pageItems, sortedItems.size)
-                }
-            }
-        )
+    return createLibraryListPager(
+        items = sortedItems,
+        pageSize = LibraryConstants.PAGE_SIZE,
+        prefetchDistance = 5
     )
-
-    return pager
 }
 private fun listItemsForMode(
     items: Map<String, LibraryItem>,

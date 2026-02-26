@@ -31,7 +31,6 @@ android {
 
 dependencies {
     implementation(project(":plugin-common"))
-    implementation(project(":custom-paging"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

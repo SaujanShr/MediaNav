@@ -42,7 +42,6 @@ kotlin {
 dependencies {
     implementation(project(":plugin-common"))
     implementation(project(":plugin-anime"))
-    implementation(project(":custom-paging"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

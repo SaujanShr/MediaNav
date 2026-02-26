@@ -30,7 +30,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":custom-paging"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -48,6 +47,7 @@ dependencies {
     implementation(libs.zoomable.image.coil)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
 }
