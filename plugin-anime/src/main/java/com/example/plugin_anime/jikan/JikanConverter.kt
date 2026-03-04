@@ -27,16 +27,16 @@ internal object JikanConverter {
             limit = limit,
             q = searchFields["search"],
             type = filterFields["type"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryType.Companion.fromValue(it)
+                AnimeSearchQueryType.fromValue(it)
             },
             status = filterFields["status"]?.include?.firstOrNull()?.let {
-                AnimeSearchQueryStatus.Companion.fromValue(it)
+                AnimeSearchQueryStatus.fromValue(it)
             },
             sfw = booleanFields["sfw"],
             genres = genresInclude.joinToString(","),
             genresExclude = genresExclude.joinToString(","),
             orderBy = sortFields["orderBy"]?.sort?.let {
-                AnimeSearchQueryOrderBy.Companion.fromValue(it)
+                AnimeSearchQueryOrderBy.fromValue(it)
             },
             sort = sortFields["orderBy"]?.direction?.let {
                 when (it) {

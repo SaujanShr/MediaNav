@@ -1,6 +1,5 @@
 package com.example.medianav.ui.library.list
 
-import com.example.medianav.library.LibraryConstants
 import com.example.medianav.library.LibraryManager
 import com.example.plugin_common.paging.createLibraryListPager
 import com.example.medianav.ui.library.mode.LibraryMode
@@ -10,6 +9,7 @@ import com.example.medianav.ui.library.mode.QueryModeType
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryItemStatus
 import com.example.plugin_common.library.LibraryQuery
+import com.example.plugin_common.paging.LibraryPager
 import com.example.plugin_common.plugin.MediaPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -29,8 +29,8 @@ interface ListStateProvider {
     val currentPage: StateFlow<Int>
     val totalPages: StateFlow<Int>
     val libraryQuery: StateFlow<LibraryQuery?>
-    val queryPager: StateFlow<com.example.plugin_common.paging.LibraryPager<LibraryItem>?>
-    val listPager: StateFlow<com.example.plugin_common.paging.LibraryPager<LibraryItem>?>
+    val queryPager: StateFlow<LibraryPager<LibraryItem>?>
+    val listPager: StateFlow<LibraryPager<LibraryItem>?>
 
     fun setPlugin(plugin: MediaPlugin?)
     fun setMode(mode: LibraryMode)
@@ -80,11 +80,9 @@ class ListState: ListStateProvider {
         )
     }
 
-    override val queryPager: StateFlow<com.example.plugin_common.paging.LibraryPager<LibraryItem>?> by lazy {
+    override val queryPager: StateFlow<LibraryPager<LibraryItem>?> by lazy {
         combine(_currentPlugin, _libraryQuery) { plugin, query ->
-            if (plugin != null) {
-                plugin.getPager(query)
-            } else null
+            plugin?.getPager(query, scope)
         }.stateIn(
             scope = scope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -92,35 +90,25 @@ class ListState: ListStateProvider {
         )
     }
 
-    override val listPager: StateFlow<com.example.plugin_common.paging.LibraryPager<LibraryItem>?> by lazy {
+    override val listPager: StateFlow<LibraryPager<LibraryItem>?> by lazy {
         combine(itemMap, _mode) { items: Map<String, LibraryItem>, mode: LibraryMode ->
-            // Create a stable key based on the sorted item IDs to detect real changes
-            if (mode is LibraryMode.List) {
-                val filteredItems = when (mode.status) {
-                    ListModeStatus.VIEWED -> items.values.filter { it.status == LibraryItemStatus.VIEWED }
-                    ListModeStatus.LIKED -> items.values.filter { it.status == LibraryItemStatus.LIKED }
-                    ListModeStatus.SAVED -> items.values.filter { it.saved }
-                }
-                val sortedItems = when (mode.sort) {
-                    ListModeSort.BY_ACCESS -> filteredItems.sortedByDescending { it.lastAccessed }
-                    ListModeSort.BY_INDEX -> filteredItems.sortedBy { it.index }
-                }
-                // Use item IDs as the key to detect changes
-                val itemsKey = sortedItems.map { it.id }.joinToString(",")
-                Triple<List<LibraryItem>, LibraryMode, String>(sortedItems, mode, itemsKey)
-            } else {
-                Triple<List<LibraryItem>, LibraryMode, String>(emptyList(), mode, "")
+            if (mode !is LibraryMode.List) return@combine emptyList()
+
+            val filteredItems = when (mode.status) {
+                ListModeStatus.VIEWED -> items.values.filter { it.status == LibraryItemStatus.VIEWED }
+                ListModeStatus.LIKED -> items.values.filter { it.status == LibraryItemStatus.LIKED }
+                ListModeStatus.SAVED -> items.values.filter { it.saved }
+            }
+
+            when (mode.sort) {
+                ListModeSort.BY_ACCESS -> filteredItems.sortedByDescending { it.lastAccessed }
+                ListModeSort.BY_INDEX -> filteredItems.sortedBy { it.index }
             }
         }
-            .distinctUntilChangedBy { (_, _, key) -> key } // Only recreate if the items key changes
-            .map { (sortedItems, mode, _) ->
-                if (mode is LibraryMode.List && sortedItems.isNotEmpty()) {
-                    createLibraryListPager(
-                        items = sortedItems,
-                        pageSize = LibraryConstants.PAGE_SIZE,
-                        prefetchDistance = 5
-                    )
-                } else null
+            .distinctUntilChanged()
+            .map { items ->
+                if (items.isNotEmpty()) createLibraryListPager(items, scope)
+                else null
             }
             .stateIn(
                 scope = scope,
@@ -130,10 +118,10 @@ class ListState: ListStateProvider {
     }
 
     override val totalPages: StateFlow<Int> by lazy {
-        combine(_mode, queryPager, listPager) { mode, queryP, listP ->
+        combine(_mode, queryPager, listPager) { mode, queryPager, listPager ->
             when (mode) {
-                is LibraryMode.Query -> queryP
-                is LibraryMode.List -> listP
+                is LibraryMode.Query -> queryPager
+                is LibraryMode.List -> listPager
             }
         }.flatMapLatest { pager ->
             pager?.totalPageCount ?: flowOf(0)

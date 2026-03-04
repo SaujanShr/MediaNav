@@ -41,6 +41,7 @@ import com.example.plugin_common.paging.createLibraryApiPager
 import com.example.plugin_anime.jikan.JikanConstants
 import com.example.plugin_anime.jikan.JikanService
 import com.example.plugin_anime.ui.AnimeSettingsScreen
+import kotlinx.coroutines.CoroutineScope
 
 class AnimePlugin : MediaPlugin {
     override val metadata = PluginMetadata(
@@ -99,26 +100,27 @@ class AnimePlugin : MediaPlugin {
         }
     )
 
-    override fun getPager(query: LibraryQuery?): LibraryPager<LibraryItem> {
+    override fun getPager(query: LibraryQuery?, scope: CoroutineScope): LibraryPager<LibraryItem> {
         val finalQuery = query ?: querySchema.defaultQuery()
 
         return createLibraryApiPager(
             pageSize = JikanConstants.Query.FETCH_SIZE,
-            prefetchDistance = 5,
             fetch = { page, fetchSize ->
-                databaseService.animeSearch(finalQuery, page, fetchSize, genreCache)
+                databaseService.animeSearch(finalQuery, page+1, fetchSize, genreCache)
             },
-            transform = { response, _ ->
+            transform = { response, page ->
                 runBlocking {
                     cacheMutex.withLock {
                         response.data.forEach { anime -> animeCache[anime.malId] = anime }
                     }
                 }
+                val absoluteStartIndex = page * JikanConstants.Query.FETCH_SIZE
                 val items = response.data.mapIndexed { index, anime ->
-                    anime.toLibraryItem(index)
+                    anime.toLibraryItem(absoluteStartIndex + index)
                 }
                 items to response.pagination.items.total
-            }
+            },
+            scope = scope
         )
     }
 

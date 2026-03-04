@@ -5,6 +5,7 @@ import com.example.plugin_common.paging.LibraryPager
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.schema.QuerySchema
+import kotlinx.coroutines.CoroutineScope
 
 interface MediaPlugin {
     val metadata: PluginMetadata
@@ -13,7 +14,7 @@ interface MediaPlugin {
 
     suspend fun initialize()
 
-    fun getPager(query: LibraryQuery?): LibraryPager<LibraryItem>
+    fun getPager(query: LibraryQuery?, scope: CoroutineScope): LibraryPager<LibraryItem>
 
     @Composable
     fun Thumbnail(item: LibraryItem)
