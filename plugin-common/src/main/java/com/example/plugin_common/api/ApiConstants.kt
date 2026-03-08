@@ -31,10 +31,6 @@ internal object ApiConstants {
         )
     }
 
-    object Response {
-        const val GZIP = "gzip"
-    }
-
     object Retry {
         const val MAX_ATTEMPTS = 5
         const val INITIAL_BACKOFF_MS = 1000L

@@ -11,6 +11,7 @@ internal class AniListService {
     private val client = AniListClient()
 
     private val animeCache = mutableMapOf<Int, Anime>()
+    private val genreCache = mutableListOf<String>()
     private val cacheMutex = Mutex()
 
     suspend fun animeSearch(
@@ -58,8 +59,23 @@ internal class AniListService {
             }
     }
 
-    suspend fun getGenreCollection(): List<String> = client
-        .getGenreCollection()
-        .getOrNull() ?: emptyList()
+    suspend fun getGenreCollection(): List<String> {
+        cacheMutex.withLock {
+            if (genreCache.isNotEmpty()) {
+                return genreCache
+            }
+        }
+
+        val genres = client
+            .getGenreCollection()
+            .getOrNull() ?: emptyList()
+
+        cacheMutex.withLock {
+            genreCache.clear()
+            genreCache.addAll(genres)
+        }
+
+        return genres
+    }
 }
 
