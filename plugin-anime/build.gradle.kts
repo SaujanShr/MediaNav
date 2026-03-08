@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.apollo)
 }
 
 android {
@@ -29,6 +30,13 @@ android {
     }
 }
 
+apollo {
+    service("anilist") {
+        packageName.set("com.example.plugin_anime.anilist.graphql")
+        generateKotlinModels.set(true)
+    }
+}
+
 dependencies {
     implementation(project(":plugin-common"))
     implementation(platform(libs.androidx.compose.bom))
@@ -36,6 +44,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.gson)
+    implementation(libs.apollo.runtime)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)

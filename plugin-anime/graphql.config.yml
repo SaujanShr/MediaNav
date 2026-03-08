@@ -1,0 +1,2 @@
+schema: src/main/graphql/anilist/schema.graphqls
+include: src/main/graphql/anilist/*.graphql

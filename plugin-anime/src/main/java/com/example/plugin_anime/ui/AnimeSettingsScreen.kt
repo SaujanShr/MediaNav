@@ -17,9 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.plugin_anime.domain.Anime
-import com.example.plugin_anime.domain.Genre
-import com.example.plugin_anime.domain.GenreQueryFilter
 import com.example.plugin_common.plugin.PluginMetadata
 import com.example.plugin_common.settings.SettingsContent
 import com.example.plugin_common.settings.SettingsGroup
@@ -28,13 +25,12 @@ import com.example.plugin_common.settings.Setting
 @Composable
 internal fun AnimeSettingsScreen(
     metadata: PluginMetadata,
-    animeCache: Map<Int, Anime>,
-    genreCache: Map<GenreQueryFilter, List<Genre>>,
+    genreCache: List<String>,
     onBack: () -> Unit
 ) {
     val settingsGroups = listOf(
         createInfoGroup(metadata),
-        createCacheGroup(animeCache.size, genreCache.size)
+        createCacheGroup(genreCache.size)
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -76,13 +72,13 @@ private fun createInfoGroup(metadata: PluginMetadata): SettingsGroup {
     )
 }
 
-private fun createCacheGroup(animeCacheSize: Int, genreCacheSize: Int): SettingsGroup {
+private fun createCacheGroup(genreCacheSize: Int): SettingsGroup {
     return SettingsGroup(
         "Cache",
         listOf(
             Setting(
                 title = "Cache Status",
-                subtitle = "$animeCacheSize anime cached • $genreCacheSize genres cached",
+                subtitle = "$genreCacheSize genres cached",
                 leftIcon = Icons.Default.Storage
             )
         )

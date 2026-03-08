@@ -1,0 +1,77 @@
+query SearchAnime(
+  $page: Int!,
+  $perPage: Int!,
+  $search: String,
+  $format: MediaFormat,
+  $status: MediaStatus,
+  $genre_in: [String],
+  $genre_not_in: [String],
+  $sort: [MediaSort],
+  $isAdult: Boolean
+) {
+  Page(page: $page, perPage: $perPage) {
+    pageInfo {
+      total
+      currentPage
+      lastPage
+      hasNextPage
+      perPage
+    }
+    media(
+      type: ANIME,
+      search: $search,
+      format: $format,
+      status: $status,
+      genre_in: $genre_in,
+      genre_not_in: $genre_not_in,
+      sort: $sort,
+      isAdult: $isAdult
+    ) {
+      id
+      title {
+        romaji
+        english
+        native
+      }
+      coverImage {
+        large
+        medium
+      }
+      bannerImage
+      type
+      format
+      status
+      episodes
+      duration
+      season
+      seasonYear
+      averageScore
+      popularity
+      favourites
+      description
+      genres
+      studios {
+        nodes {
+          name
+        }
+      }
+      startDate {
+        year
+        month
+        day
+      }
+      endDate {
+        year
+        month
+        day
+      }
+      trailer {
+        id
+        site
+      }
+      source
+      isAdult
+    }
+  }
+}
+

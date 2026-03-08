@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 fun <T : Any, R : Any> createLibraryApiPager(
     pageSize: Int,
     fetch: suspend (page: Int, pageSize: Int) -> Result<R>,
-    transform: (R, page: Int) -> Pair<List<T>, Int>,
+    transform: (result: R, page: Int) -> Pair<List<T>, Int>,
     scope: CoroutineScope
 ): LibraryPager<T> {
     val fetchPage: suspend (page: Int, pageSize: Int) -> Result<Pair<List<T>, Int>> =

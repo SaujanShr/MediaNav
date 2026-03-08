@@ -6,24 +6,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.plugin_anime.jikan.JikanConverter.toLibraryItem
-import com.example.plugin_anime.domain.Anime
-import com.example.plugin_anime.domain.AnimeSearchQueryOrderBy
-import com.example.plugin_anime.domain.AnimeSearchQueryStatus
-import com.example.plugin_anime.domain.AnimeSearchQueryType
+import com.example.plugin_anime.anilist.AniListConverter.toLibraryItem
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.expression.SortDirection
 import com.example.plugin_common.library.schema.QuerySchema
-import com.example.plugin_common.library.schema.field.BooleanFieldSchema
 import com.example.plugin_common.library.schema.field.FilterFieldSchema
 import com.example.plugin_common.library.schema.field.SearchFieldSchema
 import com.example.plugin_common.library.schema.field.SortFieldSchema
@@ -38,9 +28,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.example.plugin_common.paging.LibraryPager
 import com.example.plugin_common.paging.createLibraryApiPager
-import com.example.plugin_anime.jikan.JikanConstants
-import com.example.plugin_anime.jikan.JikanService
+import com.example.plugin_anime.anilist.AniListConstants
+import com.example.plugin_anime.anilist.AniListService
+import com.example.plugin_anime.anilist.graphql.type.MediaFormat
+import com.example.plugin_anime.anilist.graphql.type.MediaSort
+import com.example.plugin_anime.anilist.graphql.type.MediaStatus
+import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.ui.AnimeSettingsScreen
+import com.example.plugin_common.library.schema.field.DateFieldSchema
 import kotlinx.coroutines.CoroutineScope
 
 class AnimePlugin : MediaPlugin {
@@ -55,10 +50,8 @@ class AnimePlugin : MediaPlugin {
         bannerResId = R.drawable.ic_banner
     )
 
-    private val databaseService = JikanService()
-    private val animeCache = mutableMapOf<Int, Anime>()
-    private val genreCache = runBlocking { databaseService.genreCache() }
-    private val cacheMutex = Mutex()
+    private val service = AniListService()
+    private val genreCache = runBlocking { service.getGenreCollection() }
 
     private val thumbnailPlayer = ThumbnailPlayer(75f / 106f)
     private val previewPlayer = PreviewPlayer(75f / 106f)
@@ -67,34 +60,30 @@ class AnimePlugin : MediaPlugin {
 
     override val querySchema = QuerySchema(
         fields = buildMap {
-            put(JikanConstants.Query.SEARCH, SearchFieldSchema())
+            put("search", SearchFieldSchema())
             put(
-                JikanConstants.Query.TYPE, FilterFieldSchema(
-                supported = AnimeSearchQueryType.entries.map { it.value }.toSet(),
+                "format", FilterFieldSchema(
+                supported = MediaFormat.knownEntries.map { it.rawValue }.toSet(),
                 include = true
             ))
             put(
-                JikanConstants.Query.STATUS, FilterFieldSchema(
-                supported = AnimeSearchQueryStatus.entries.map { it.value }.toSet(),
+                "status", FilterFieldSchema(
+                supported = MediaStatus.knownEntries.map { it.rawValue }.toSet(),
                 include = true
             ))
-            put(JikanConstants.Query.SFW, BooleanFieldSchema())
-
-            genreCache.forEach { (filter, genres) ->
-                put(filter.value, FilterFieldSchema(
-                    supported = genres.map { it.name.lowercase() }.toSet(),
-                    multiple = true,
-                    include = true,
-                    exclude = true
-                ))
-            }
-
+            put("date", DateFieldSchema(range = true))
+            put("genres", FilterFieldSchema(
+                supported = genreCache.toSet(),
+                multiple = true,
+                include = true,
+                exclude = true
+            ))
             put(
-                JikanConstants.Query.ORDER_BY, SortFieldSchema(
-                supported = AnimeSearchQueryOrderBy.entries.map { it.value }.toSet(),
+                "orderBy", SortFieldSchema(
+                supported = MediaSort.knownEntries.map { it.rawValue }.toSet(),
                 ascending = true,
                 descending = true,
-                defaultSort = AnimeSearchQueryOrderBy.SCORE.value,
+                defaultSort = MediaSort.SCORE_DESC.rawValue,
                 defaultDirection = SortDirection.DESC
             ))
         }
@@ -104,21 +93,15 @@ class AnimePlugin : MediaPlugin {
         val finalQuery = query ?: querySchema.defaultQuery()
 
         return createLibraryApiPager(
-            pageSize = JikanConstants.Query.FETCH_SIZE,
+            pageSize = AniListConstants.Query.FETCH_SIZE,
             fetch = { page, fetchSize ->
-                databaseService.animeSearch(finalQuery, page+1, fetchSize, genreCache)
+                service.animeSearch(finalQuery, page+1, fetchSize)
             },
-            transform = { response, page ->
-                runBlocking {
-                    cacheMutex.withLock {
-                        response.data.forEach { anime -> animeCache[anime.malId] = anime }
-                    }
-                }
-                val absoluteStartIndex = page * JikanConstants.Query.FETCH_SIZE
-                val items = response.data.mapIndexed { index, anime ->
-                    anime.toLibraryItem(absoluteStartIndex + index)
-                }
-                items to response.pagination.items.total
+            transform = { (items, total), page ->
+                val startIndex = page * AniListConstants.Query.FETCH_SIZE
+                items.mapIndexed { index, anime ->
+                    anime.toLibraryItem(startIndex + index)
+                } to total
             },
             scope = scope
         )
@@ -131,10 +114,10 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun PreviewContent(item: LibraryItem) {
-        val anime = getAnime(item)
+        val anime = runBlocking { getAnime(item) }
         anime?.let {
             previewPlayer.Remote(
-                it.images.jpg.largeImageUrl!!,
+                it.coverImage.large ?: it.coverImage?.medium ?: "",
                 listOf()
             )
         }
@@ -142,22 +125,22 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun SummaryContent(item: LibraryItem) {
-        val anime = getAnime(item)
+        val anime = runBlocking { getAnime(item) }
         anime?.let {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = it.titles.firstOrNull { t -> t.type == "Default" }?.title ?: item.title,
+                    text = it.title?.english ?: it.title?.romaji ?: it.title?.native ?: item.title,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${it.type?.value ?: "Unknown"} • ${it.episodes ?: "?"} eps • ${it.status?.value ?: "Unknown"}",
+                    text = "${it.format?.rawValue ?: "UNKNOWN"} • ${it.episodes ?: "?"} eps • ${it.status?.rawValue ?: "UNKNOWN"}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                it.score?.let { score ->
+                it.averageScore?.let { score ->
                     Text(
-                        text = "Score: $score",
+                        text = "Score: ${score / 10.0}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -168,7 +151,7 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun DescriptionContent(item: LibraryItem) {
-        val anime = getAnime(item)
+        val anime = runBlocking { getAnime(item) }
         anime?.let {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -177,7 +160,7 @@ class AnimePlugin : MediaPlugin {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = it.synopsis ?: "No synopsis available.",
+                    text = it.description?.replace(Regex("<[^>]*>"), "") ?: "No synopsis available.",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -187,13 +170,13 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun AttributeContent(item: LibraryItem) {
-        val anime = getAnime(item)
+        val anime = runBlocking { getAnime(item) }
         anime?.let {
             Column(modifier = Modifier.padding(16.dp)) {
-                AttributeRow("Rating", it.rating?.value ?: "Unknown")
+                AttributeRow("Format", it.format?.rawValue ?: "Unknown")
                 AttributeRow("Source", it.source ?: "Unknown")
-                AttributeRow("Aired", it.aired.from ?: "Unknown")
-                AttributeRow("Studios", it.studios.joinToString { s -> s.name }.ifEmpty { "Unknown" })
+                AttributeRow("Season", "${it.season ?: "Unknown"} ${it.seasonYear ?: ""}")
+                AttributeRow("Studios", it.studios.joinToString(",") ?: "Unknown")
             }
         }
     }
@@ -219,31 +202,10 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun SettingsScreen(onBack: () -> Unit) {
-        AnimeSettingsScreen(
-            metadata = metadata,
-            animeCache = animeCache,
-            genreCache = genreCache,
-            onBack = onBack
-        )
+        AnimeSettingsScreen(metadata, genreCache, onBack)
     }
 
-    @Composable
-    private fun getAnime(item: LibraryItem): Anime? {
-        var anime by remember { mutableStateOf<Anime?>(null) }
-
-        LaunchedEffect(item.id) {
-            cacheMutex.withLock {
-                anime = animeCache[item.id.toIntOrNull()]
-                if (anime == null) {
-                    databaseService.getAnimeById(item.id.toInt(), genreCache)
-                        .onSuccess { response ->
-                            anime = response.data
-                            animeCache[item.id.toInt()] = response.data
-                        }
-                }
-            }
-        }
-
-        return anime
-    }
+    private suspend fun getAnime(item: LibraryItem) = service
+        .getAnimeById(item.id.toInt())
+        .getOrNull()
 }

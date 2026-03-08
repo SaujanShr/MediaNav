@@ -3,6 +3,7 @@ package com.example.plugin_common.api
 internal object ApiConstants {
     object Method {
         const val GET = "GET"
+        const val POST = "POST"
     }
 
     object Timeout {

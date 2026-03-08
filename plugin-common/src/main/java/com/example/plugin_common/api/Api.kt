@@ -18,9 +18,24 @@ class Api(val requestsPerMinute: Int? = null) {
     suspend fun get(url: String, headers: Map<String, String> = emptyMap()) =
         withContext(Dispatchers.IO) {
             executeWithRetry(requestsPerMinute) {
-                val conn = buildConnection(url, headers)
+                val conn = buildConnection(url, headers, ApiConstants.Method.GET)
                 try {
                     conn.connect()
+                    readResponse(conn)
+                } finally {
+                    conn.disconnect()
+                }
+            }
+        }
+
+    suspend fun post(url: String, body: String, headers: Map<String, String> = emptyMap()) =
+        withContext(Dispatchers.IO) {
+            executeWithRetry(requestsPerMinute) {
+                val conn = buildConnection(url, headers, ApiConstants.Method.POST)
+                conn.doOutput = true
+                try {
+                    conn.connect()
+                    conn.outputStream.bufferedWriter().use { it.write(body) }
                     readResponse(conn)
                 } finally {
                     conn.disconnect()
@@ -102,11 +117,12 @@ class Api(val requestsPerMinute: Int? = null) {
 
     private fun buildConnection(
         url: String,
-        headers: Map<String, String>
+        headers: Map<String, String>,
+        method: String
     ): HttpURLConnection {
         val connection = URL(url).openConnection() as HttpURLConnection
 
-        connection.requestMethod = ApiConstants.Method.GET
+        connection.requestMethod = method
         connection.connectTimeout = ApiConstants.Timeout.CONNECT_TIMEOUT_MS
         connection.readTimeout = ApiConstants.Timeout.READ_TIMEOUT_MS
         connection.instanceFollowRedirects = true

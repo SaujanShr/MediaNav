@@ -1,0 +1,199 @@
+query GetAnime($id: Int!) {
+  Media(id: $id, type: ANIME) {
+    id
+    title {
+      romaji
+      english
+      native
+    }
+    coverImage {
+      extraLarge
+      large
+      medium
+      color
+    }
+    bannerImage
+    startDate {
+      year
+      month
+      day
+    }
+    endDate {
+      year
+      month
+      day
+    }
+    description
+    season
+    seasonYear
+    type
+    format
+    status
+    episodes
+    duration
+    chapters
+    volumes
+    genres
+    synonyms
+    source
+    isAdult
+    meanScore
+    averageScore
+    popularity
+    favourites
+    hashtag
+    countryOfOrigin
+    isLicensed
+    airingSchedule {
+      nodes {
+        id
+        airingAt
+        timeUntilAiring
+        episode
+      }
+    }
+    trailer {
+      id
+      site
+      thumbnail
+    }
+    studios {
+      edges {
+        isMain
+        node {
+          id
+          name
+        }
+      }
+    }
+    relations {
+      edges {
+        id
+        relationType
+        node {
+          id
+          title {
+            romaji
+            english
+            native
+          }
+          format
+          type
+          status
+          coverImage {
+            large
+            medium
+          }
+        }
+      }
+    }
+    characters(sort: [ROLE, RELEVANCE, ID]) {
+      edges {
+        id
+        role
+        name
+        voiceActors(language: JAPANESE, sort: [RELEVANCE, ID]) {
+          id
+          name {
+            full
+            native
+          }
+          language
+          image {
+            large
+            medium
+          }
+        }
+        node {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+            medium
+          }
+        }
+      }
+    }
+    staff {
+      edges {
+        id
+        role
+        node {
+          id
+          name {
+            full
+            native
+          }
+          language
+          image {
+            large
+            medium
+          }
+        }
+      }
+    }
+    recommendations(sort: [RATING_DESC, ID]) {
+      nodes {
+        id
+        rating
+        mediaRecommendation {
+          id
+          title {
+            romaji
+            english
+            native
+          }
+          format
+          type
+          status
+          coverImage {
+            large
+            medium
+          }
+          meanScore
+        }
+      }
+    }
+    externalLinks {
+      id
+      url
+      site
+      type
+    }
+    streamingEpisodes {
+      title
+      thumbnail
+      url
+      site
+    }
+    rankings {
+      id
+      rank
+      type
+      format
+      year
+      season
+      allTime
+      context
+    }
+    tags {
+      id
+      name
+      description
+      category
+      rank
+      isGeneralSpoiler
+      isMediaSpoiler
+      isAdult
+    }
+    nextAiringEpisode {
+      id
+      airingAt
+      timeUntilAiring
+      episode
+    }
+  }
+}
