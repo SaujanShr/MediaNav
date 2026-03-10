@@ -24,8 +24,10 @@ internal class AniListClient {
         genreIn: List<String>? = null,
         genreNotIn: List<String>? = null,
         sort: List<MediaSort>? = null,
-        isAdult: Boolean? = null
-    ): Result<SearchAnimeQuery.Data> = runCatching {
+        isAdult: Boolean? = null,
+        startDateGreater: Int? = null,
+        startDateLesser: Int? = null
+    ): Result<SearchAnimeQuery.Page> = runCatching {
         val response = client.query(
             SearchAnimeQuery(
                 page = page,
@@ -36,14 +38,16 @@ internal class AniListClient {
                 genre_in = Optional.presentIfNotNull(genreIn),
                 genre_not_in = Optional.presentIfNotNull(genreNotIn),
                 sort = Optional.presentIfNotNull(sort),
-                isAdult = Optional.presentIfNotNull(isAdult)
+                isAdult = Optional.presentIfNotNull(isAdult),
+                startDate_greater = Optional.presentIfNotNull(startDateGreater),
+                startDate_lesser = Optional.presentIfNotNull(startDateLesser)
             )
         ).execute()
 
-        response.data ?: throw Exception("No data in response: ${response.errors}")
+        response.data?.Page ?: throw Exception("No media data in response: ${response.errors}")
     }
 
-    suspend fun getAnimeById(id: Int): Result<AniListMedia> = runCatching {
+    suspend fun getAnimeById(id: Int): Result<GetAnimeQuery.Media> = runCatching {
         val response = client.query(
             GetAnimeQuery(id = id)
         ).execute()

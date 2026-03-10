@@ -14,6 +14,8 @@ import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 import com.example.plugin_common.library.expression.SortDirection
 import com.example.plugin_common.library.schema.QuerySchema
+import com.example.plugin_common.library.schema.field.BooleanFieldSchema
+import com.example.plugin_common.library.schema.field.DateFieldSchema
 import com.example.plugin_common.library.schema.field.FilterFieldSchema
 import com.example.plugin_common.library.schema.field.SearchFieldSchema
 import com.example.plugin_common.library.schema.field.SortFieldSchema
@@ -24,8 +26,6 @@ import com.example.plugin_common.plugin.PluginCategory
 import com.example.plugin_common.plugin.PluginMetadata
 import com.example.plugin_common.plugin.PluginResources
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import com.example.plugin_common.paging.LibraryPager
 import com.example.plugin_common.paging.createLibraryApiPager
 import com.example.plugin_anime.anilist.AniListConstants
@@ -33,9 +33,8 @@ import com.example.plugin_anime.anilist.AniListService
 import com.example.plugin_anime.anilist.graphql.type.MediaFormat
 import com.example.plugin_anime.anilist.graphql.type.MediaSort
 import com.example.plugin_anime.anilist.graphql.type.MediaStatus
-import com.example.plugin_anime.domain.Anime
 import com.example.plugin_anime.ui.AnimeSettingsScreen
-import com.example.plugin_common.library.schema.field.DateFieldSchema
+import com.example.plugin_anime.ui.AnimeSummary
 import kotlinx.coroutines.CoroutineScope
 
 class AnimePlugin : MediaPlugin {
@@ -71,6 +70,7 @@ class AnimePlugin : MediaPlugin {
                 supported = MediaStatus.knownEntries.map { it.rawValue }.toSet(),
                 include = true
             ))
+            put("sfw", BooleanFieldSchema(default = true))
             put("date", DateFieldSchema(range = true))
             put("genres", FilterFieldSchema(
                 supported = genreCache.toSet(),
@@ -114,39 +114,13 @@ class AnimePlugin : MediaPlugin {
 
     @Composable
     override fun PreviewContent(item: LibraryItem) {
-        val anime = runBlocking { getAnime(item) }
-        anime?.let {
-            previewPlayer.Remote(
-                it.coverImage.large ?: it.coverImage?.medium ?: "",
-                listOf()
-            )
-        }
+        previewPlayer.Remote(item.thumbnailUrl, listOf())
     }
 
     @Composable
     override fun SummaryContent(item: LibraryItem) {
         val anime = runBlocking { getAnime(item) }
-        anime?.let {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = it.title?.english ?: it.title?.romaji ?: it.title?.native ?: item.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${it.format?.rawValue ?: "UNKNOWN"} • ${it.episodes ?: "?"} eps • ${it.status?.rawValue ?: "UNKNOWN"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                it.averageScore?.let { score ->
-                    Text(
-                        text = "Score: ${score / 10.0}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
+        AnimeSummary(anime)
     }
 
     @Composable
@@ -176,7 +150,7 @@ class AnimePlugin : MediaPlugin {
                 AttributeRow("Format", it.format?.rawValue ?: "Unknown")
                 AttributeRow("Source", it.source ?: "Unknown")
                 AttributeRow("Season", "${it.season ?: "Unknown"} ${it.seasonYear ?: ""}")
-                AttributeRow("Studios", it.studios.joinToString(",") ?: "Unknown")
+                AttributeRow("Studios", it.studios.joinToString(","))
             }
         }
     }

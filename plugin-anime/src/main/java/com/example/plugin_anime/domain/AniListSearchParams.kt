@@ -11,5 +11,7 @@ data class AniListSearchParams(
     val isAdult: Boolean?,
     val genreIn: List<String>?,
     val genreNotIn: List<String>?,
-    val sort: List<MediaSort>?
+    val sort: List<MediaSort>?,
+    val startDateGreater: Int?,
+    val startDateLesser: Int?
 )

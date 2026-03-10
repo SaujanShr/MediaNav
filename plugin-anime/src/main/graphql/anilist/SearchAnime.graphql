@@ -7,7 +7,9 @@ query SearchAnime(
   $genre_in: [String],
   $genre_not_in: [String],
   $sort: [MediaSort],
-  $isAdult: Boolean
+  $isAdult: Boolean,
+  $startDate_greater: FuzzyDateInt,
+  $startDate_lesser: FuzzyDateInt
 ) {
   Page(page: $page, perPage: $perPage) {
     pageInfo {
@@ -25,7 +27,9 @@ query SearchAnime(
       genre_in: $genre_in,
       genre_not_in: $genre_not_in,
       sort: $sort,
-      isAdult: $isAdult
+      isAdult: $isAdult,
+      startDate_greater: $startDate_greater,
+      startDate_lesser: $startDate_lesser
     ) {
       id
       title {

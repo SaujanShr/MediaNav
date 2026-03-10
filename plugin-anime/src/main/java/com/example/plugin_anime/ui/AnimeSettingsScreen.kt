@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +34,6 @@ internal fun AnimeSettingsScreen(
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top bar with back button
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -54,7 +53,6 @@ internal fun AnimeSettingsScreen(
             )
         }
 
-        // Settings content
         SettingsContent(settingsGroups = settingsGroups)
     }
 }

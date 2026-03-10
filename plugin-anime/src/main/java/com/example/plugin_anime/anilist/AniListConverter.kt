@@ -12,13 +12,18 @@ import com.example.plugin_anime.domain.AnimeTitle
 import com.example.plugin_common.library.LibraryItem
 import com.example.plugin_common.library.LibraryQuery
 
-typealias AniListMedia = GetAnimeQuery.Media
-typealias AniListSearchMedia = SearchAnimeQuery.Medium
-
 internal object AniListConverter {
     fun LibraryQuery.toSearchParams(): AniListSearchParams {
         val genresInclude = filterFields["genres"]?.include?.toList() ?: emptyList()
         val genresExclude = filterFields["genres"]?.exclude?.toList() ?: emptyList()
+
+        val dateRange = dateFields["date"]
+        val startDateGreater = dateRange?.first?.let { date ->
+            date.year * 10000 + date.monthValue * 100 + date.dayOfMonth
+        }
+        val startDateLesser = dateRange?.second?.let { date ->
+            date.year * 10000 + date.monthValue * 100 + date.dayOfMonth
+        }
 
         return AniListSearchParams(
             search = searchFields["search"],
@@ -35,11 +40,13 @@ internal object AniListConverter {
                 val sortValue = field.sort
                 val sortEnum = MediaSort.knownEntries.find { it.rawValue == sortValue }
                 sortEnum?.let { listOf(it) }
-            }
+            },
+            startDateGreater = startDateGreater,
+            startDateLesser = startDateLesser
         )
     }
 
-    fun AniListMedia.toAnime() = Anime(
+    fun GetAnimeQuery.Media.toAnime() = Anime(
         id = id,
         title = AnimeTitle(
             romaji = title?.romaji,
@@ -67,7 +74,7 @@ internal object AniListConverter {
         isAdult = isAdult ?: false
     )
 
-    fun AniListSearchMedia.toAnime() = Anime(
+    fun SearchAnimeQuery.Medium.toAnime() = Anime(
         id = id,
         title = AnimeTitle(
             romaji = title?.romaji,
@@ -97,8 +104,9 @@ internal object AniListConverter {
 
     fun Anime.toLibraryItem(index: Int) = LibraryItem(
         id = id.toString(),
-        title = title.romaji ?: title.native ?: "Unknown",
-        thumbnailUrl = coverImage.large ?: coverImage.medium ?: "",
+        title = title.romaji ?: "",
+        thumbnailUrl = coverImage.large ?: "",
         index = index
     )
 }
+

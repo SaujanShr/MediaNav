@@ -30,12 +30,14 @@ internal class AniListService {
             genreIn = params.genreIn,
             genreNotIn = params.genreNotIn,
             sort = params.sort,
-            isAdult = params.isAdult
+            isAdult = params.isAdult,
+            startDateGreater = params.startDateGreater,
+            startDateLesser = params.startDateLesser
         )
 
-        return response.map { data ->
-            val animeList = data.Page?.media?.mapNotNull { it?.toAnime() } ?: emptyList()
-            val total = data.Page?.pageInfo?.total ?: 0
+        return response.map { page ->
+            val animeList = page.media?.mapNotNull { it?.toAnime() } ?: emptyList()
+            val total = page.pageInfo?.total ?: 0
 
             cacheMutex.withLock {
                 animeList.forEach { anime -> animeCache[anime.id] = anime }
@@ -52,8 +54,8 @@ internal class AniListService {
 
         return client
             .getAnimeById(id)
-            .map {
-                val anime = it.toAnime()
+            .map { media ->
+                val anime = media.toAnime()
                 cacheMutex.withLock { animeCache[anime.id] = anime }
                 anime
             }
