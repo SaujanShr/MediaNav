@@ -175,8 +175,8 @@ class AnimePlugin : MediaPlugin {
     }
 
     @Composable
-    override fun SettingsScreen(onBack: () -> Unit) {
-        AnimeSettingsScreen(metadata, genreCache, onBack)
+    override fun SettingsScreen() {
+        AnimeSettingsScreen(metadata, genreCache)
     }
 
     private suspend fun getAnime(item: LibraryItem) = service

@@ -26,9 +26,6 @@ fun AnimeSummary(anime: Anime?) {
             }
         }
 
-        Summary(
-            title = it.title.romaji ?: "",
-            attributes = attributes
-        )
+        Summary(attributes = attributes)
     }
 }

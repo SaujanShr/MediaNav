@@ -134,7 +134,7 @@ private fun PluginItem(pluginViewModel: PluginViewModel, plugin: MediaPlugin) {
             IconButton(onClick = { pluginViewModel.openPluginSettings(plugin) }) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Plugin Settings",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -27,20 +27,33 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 data class Setting(
-    private val title: String,
-    private val subtitle: String,
-    private val leftIcon: ImageVector,
-    private val onClick: (() -> Unit)? = null,
-    private val dropdownContent: (@Composable () -> Unit)? = null
+    val title: String,
+    val subtitle: String,
+    val leftIcon: ImageVector,
+    val onClick: (() -> Unit)? = null,
+    val dropdownContent: (@Composable () -> Unit)? = null
 ) {
+    private val id = "$title|$subtitle"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Setting) return false
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+
     @Composable
-    fun Content(expanded: Boolean, toggleExpanded: () -> Unit) {
+    fun Content(expanded: Boolean, toggleExpanded: () -> Unit, collapseExpanded: () -> Unit) {
         SettingContent(
             title = title,
             subtitle = subtitle,
             leftIcon = leftIcon,
             expanded = expanded,
             toggleExpanded = toggleExpanded,
+            collapseExpanded = collapseExpanded,
             onClick = onClick,
             dropdownContent = dropdownContent
         )
@@ -54,6 +67,7 @@ private fun SettingContent(
     leftIcon: ImageVector,
     expanded: Boolean,
     toggleExpanded: () -> Unit,
+    collapseExpanded: () -> Unit,
     onClick: (() -> Unit)? = null,
     dropdownContent: (@Composable () -> Unit)? = null
 ) {
@@ -68,7 +82,10 @@ private fun SettingContent(
                 if (dropdownContent != null) {
                     toggleExpanded()
                 }
-                onClick?.invoke()
+                onClick?.let {
+                    collapseExpanded()
+                    it.invoke()
+                }
             }
         )
 

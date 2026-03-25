@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medianav.ui.navigation.PluginViewModel
-import com.example.plugin_common.settings.SettingsContent
+import com.example.plugin_common.settings.SettingsManager
 import com.example.plugin_common.settings.SettingsGroup
 import com.example.plugin_common.shared.ErrorBannerList
 
@@ -41,8 +41,11 @@ fun SettingsScreen(
             )
         )
     )
+
+    val settingsManager = SettingsManager(settingsGroups)
+
     Box(modifier = Modifier.fillMaxSize()) {
-        SettingsContent(settingsGroups = settingsGroups)
+        settingsManager.Content()
         ErrorBannerList(errorMessages, Modifier.align(Alignment.TopCenter))
     }
 }

@@ -9,6 +9,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.medianav.ui.animation.AnimatedDismiss
+import com.example.medianav.ui.library.list.LibraryGrid
 import com.example.medianav.ui.library.list.LibraryGrid
 import com.example.medianav.ui.library.list.header.LibraryHeader
 import com.example.medianav.ui.library.media.MediaScreen
@@ -39,11 +41,11 @@ fun LibraryScreen(
                 }
             )
         }
-        if (currentItem != null) {
-            MediaScreen(
-                viewModel = libraryViewModel,
-                onBack = { libraryViewModel.clearItem() }
-            )
+        AnimatedDismiss(
+            visible = currentItem != null,
+            onDismiss = { libraryViewModel.clearItem() }
+        ) {
+            MediaScreen(viewModel = libraryViewModel)
         }
     }
 }

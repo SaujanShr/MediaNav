@@ -35,5 +35,5 @@ interface MediaPlugin {
     fun PlayableContent(item: LibraryItem)
 
     @Composable
-    fun SettingsScreen(onBack: () -> Unit)
+    fun SettingsScreen()
 }

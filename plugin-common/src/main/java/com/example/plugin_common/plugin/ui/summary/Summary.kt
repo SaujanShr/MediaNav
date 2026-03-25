@@ -12,27 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Summary(title: String, attributes: List<Attribute>) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier.padding(16.dp)
-    ) {
-        SummaryGroupHeader(title)
-        AttributeGroup(attributes)
-    }
-}
-
-@Composable
-private fun SummaryGroupHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.headlineSmall,
-        color = MaterialTheme.colorScheme.primary
-    )
-}
-
-@Composable
-private fun AttributeGroup(attributes: List<Attribute>) {
+fun Summary(attributes: List<Attribute>) {
     val maxLabelLength = attributes.maxOfOrNull { it.label.length } ?: 0
     val labelWidth = (maxLabelLength * 10).dp
 

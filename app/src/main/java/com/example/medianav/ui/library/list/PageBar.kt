@@ -91,7 +91,7 @@ private fun FirstPageButton(
     ) {
         Icon(
             imageVector = Icons.Default.SkipPrevious,
-            contentDescription = "First page",
+            contentDescription = null,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -109,7 +109,7 @@ private fun PreviousPageButton(
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-            contentDescription = "Previous page",
+            contentDescription = null,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -127,7 +127,7 @@ private fun NextPageButton(
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-            contentDescription = "Next page",
+            contentDescription = null,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -145,7 +145,7 @@ private fun LastPageButton(
     ) {
         Icon(
             imageVector = Icons.Default.SkipNext,
-            contentDescription = "Last page",
+            contentDescription = null,
             modifier = Modifier.size(20.dp)
         )
     }

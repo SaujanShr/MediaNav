@@ -15,14 +15,21 @@ data class SettingsGroup(
     val settings: List<Setting>
 ) {
     @Composable
-    fun Content(startIndex: Int, expandedSettingIndex: Int?, toggleExpanded: (Int) -> Unit) {
+    fun Content(
+        expandedSetting: Setting?,
+        toggleExpanded: (Setting) -> Unit,
+        collapseExpanded: () -> Unit
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             SettingsGroupHeader(title)
 
-            settings.forEachIndexed { index, setting ->
-                val settingIndex = startIndex + index
-                val expanded = expandedSettingIndex == settingIndex
-                setting.Content(expanded, { toggleExpanded(settingIndex) })
+            settings.forEach { setting ->
+                val expanded = expandedSetting == setting
+                setting.Content(
+                    expanded = expanded,
+                    toggleExpanded = { toggleExpanded(setting) },
+                    collapseExpanded = collapseExpanded
+                )
             }
         }
 
